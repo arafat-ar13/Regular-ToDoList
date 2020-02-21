@@ -1,0 +1,38 @@
+{% extends "ToDo/base.html" %}
+{% block content %}
+    {% if user.is_authenticated %}
+        {% for todo in todos %}
+            {% if user.username|lower == todo.creator|lower %}
+                <h1>{{ todo.title }}</h1>
+                <h2>{{ todo.content }}</h2>
+                <p1>{{ todo.date_posted }}</p1>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+    <style>
+        #outer
+        {
+            width:100%;
+            text-align: center;
+            margin-left: 20ch;
+        }
+        .inner
+        {
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .act-as-btn
+        {
+            color: inherit;
+            text-decoration: none;
+        }
+    </style>
+    <h1 style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px; padding-left: 10ch;"><center>Welcome to my app <br> <b style="background-color: cyan">Regular ToDoList</b></center></h1>
+    <br><br><br>
+    <div id="outer">
+        <div class="inner"><button style="height:65px; width:130px" type="button" class="btn btn-outline-success"><a class="act-as-btn" href="{% url 'register' %}">Sign up</a></button></div>
+        <div class="inner"><button style="height:65px; width:130px" type="button" class="btn btn-outline-primary"><a class="act-as-btn" href="{% url 'login' %}">Login</a></button></div>
+    </div>
+    {% endif %}
+{% endblock content %}
