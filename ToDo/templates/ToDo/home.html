@@ -1,13 +1,29 @@
 {% extends "ToDo/base.html" %}
 {% block content %}
+{% load crispy_forms_tags %}
     {% if user.is_authenticated %}
-        {% for todo in todos %}
-            {% if user.username|lower == todo.creator|lower %}
-                <h1>{{ todo.title }}</h1>
-                <h2>{{ todo.content }}</h2>
-                <p1>{{ todo.date_posted }}</p1>
-            {% endif %}
-        {% endfor %}
+        {% if user.profile.todos == 0 %}
+            <div class="container-fluid">
+                <h2>You are on top of the world!</h2>
+            </div>
+        {% else %}
+            {% for todo in todos %}
+                {% if user.username|lower == todo.creator|lower and not todo.is_checked %}
+                    <article class="media content-section">
+                        <div class="media-body">
+                            <h2><a class="article-title">{{ todo.title }}</a></h2>
+                            <button onclick="location.href='{% url 'todo-edit' todo.pk %}'" class="btn btn-outline-primary" type="submit">Edit</button>
+                            <button onclick="location.href='{% url 'todo-delete' todo.pk %}'" class="btn btn-outline-danger" type="submit">Delete</button>
+                            <button onclick="location.href='{% url 'todo-check' todo.pk %}'" class="btn btn-outline-success" type="submit">Mark checked</button>
+                            <br>
+                            <div class="article-metadata">
+                                <small class="text-muted">{{ todo.date_posted|date:"F d, Y" }}</small>
+                            </div>
+                        </div>
+                    </article>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
     {% else %}
     <style>
         #outer
@@ -22,17 +38,12 @@
             margin: 5px;
         }
 
-        .act-as-btn
-        {
-            color: inherit;
-            text-decoration: none;
-        }
     </style>
     <h1 style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px; padding-left: 10ch;"><center>Welcome to my app <br> <b style="background-color: cyan">Regular ToDoList</b></center></h1>
     <br><br><br>
     <div id="outer">
-        <div class="inner"><button style="height:65px; width:130px" type="button" class="btn btn-outline-success"><a class="act-as-btn" href="{% url 'register' %}">Sign up</a></button></div>
-        <div class="inner"><button style="height:65px; width:130px" type="button" class="btn btn-outline-primary"><a class="act-as-btn" href="{% url 'login' %}">Login</a></button></div>
+        <div class="inner"><button style="height:65px; width:130px" type="button" onclick="location.href='{% url 'register' %}'" class="btn btn-outline-success">Sign up</button></div>
+        <div class="inner"><button style="height:65px; width:130px" type="button" onclick="location.href='{% url 'login' %}'" class="btn btn-outline-primary">Login</button></div>
     </div>
     {% endif %}
 {% endblock content %}
