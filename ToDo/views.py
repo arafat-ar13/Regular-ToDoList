@@ -15,6 +15,10 @@ def home(request):
     return render(request, "ToDo/home.html", context)
 
 
+def about(request):
+    return render(request, "ToDo/about.html")
+
+
 def delete(request, pk):
     todo = ToDo.objects.get(pk=pk)
 

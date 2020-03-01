@@ -1,0 +1,33 @@
+{% extends "ToDo/base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="jumbotron">
+    <h1 class="display-4">Hello, world!</h1>
+    <p class="lead" style="font-family: Cambria; background-color: aquamarine;">My 1st Web App made using Django and a bit of Bootstrap magic made for you</p>
+    <hr class="my-4">
+    <p>
+        Get ready to manage your tasks the way you want! Regular ToDoList is a fairly simple todolist app.
+        It has all the basic features a todo app should have like creating and managing your tasks. Users also get a personal profile
+        page where they can update their info like username or profile picture.
+        <br>
+        Since this is a web app, you can have your tasks available on all your devices once you login using your credentials. The app has military grade security
+        built right into Django. Many new features should be arriving over the span of months:
+        <br><br>
+        <div class="list-group">
+            <button type="button" class="list-group-item list-group-item-action">Task delete confirmation</button>
+            <button type="button" class="list-group-item list-group-item-action">Ability for users to reset your account password if they forget it by any chance</button>
+            <button type="button" class="list-group-item list-group-item-action">Add Pagination feature to the "Completed Tasks" page so that the page doesn't get cluttered when users complete lots of tasks</button>
+            <button type="button" class="list-group-item list-group-item-action">Users will be able to add Due Dates to their tasks - which should turn red if it is past the date</button>
+            <button type="button" class="list-group-item list-group-item-action">IMAGINARY: A Insights page where users will be able to see a beautiful graph of how they are managing their tasks. Powered by sweet Matplotlib</button>
+        </div>
+        <br>
+        The app itself if hosted at PythonAnywhere so a shoutout to them as well.
+    </p>
+    <p class="lead">
+        <a class="btn btn-primary btn-lg" target="_blank" href="https://github.com/arafat-ar13/Regular-ToDoList" role="button">Watch this app grow at the GitHub repo</a>
+    </p>
+</div>
+
+
+{% endblock content %}
