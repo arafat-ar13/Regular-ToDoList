@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 def register(request):
     user = User.objects.get(username=request.user.username)
     if user.is_authenticated:
-        messages.info(request, "You are already logged in")
+        messages.error(request, "You are already logged in")
         return redirect("todo-home")
 
     else:
