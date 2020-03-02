@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    'django_user_agents',
     'users.apps.UsersConfig',
     'crispy_forms',
     'ToDo.apps.TodoConfig',
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django_user_agents.middleware.UserAgentMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -130,3 +132,4 @@ MEDIA_URL = "/media/"
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 LOGIN_REDIRECT_URL = "todo-home"
+USER_AGENTS_CACHE = 'default'
