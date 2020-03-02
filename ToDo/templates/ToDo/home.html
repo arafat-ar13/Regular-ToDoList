@@ -1,6 +1,7 @@
 {% extends "ToDo/base.html" %}
 {% block content %}
 {% load crispy_forms_tags %}
+{% load user_agents %}
     {% if user.is_authenticated %}
         {% if user.profile.todos == 0 %}
             <div class="container-fluid">
@@ -30,7 +31,6 @@
         {
             width:100%;
             text-align: center;
-            margin-left: 20ch;
         }
         .inner
         {
@@ -39,7 +39,19 @@
         }
 
     </style>
-    <h1 style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px; padding-left: 10ch;"><center>Welcome to my app <br> <b style="background-color: cyan">Regular ToDoList</b></center></h1>
+    {% if request.user_agent.is_mobile %}
+        <h1 style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px;"><center>Welcome to my app<br> <b style="background-color: cyan">Regular ToDoList</b></center></h1>
+    {% else %}
+    
+        <style>
+            #outer
+            {
+                margin-left: 20ch;
+            }
+        </style>
+
+        <h1 style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px; padding-left: 10ch;"><center>Welcome to my app<br> <b style="background-color: cyan">Regular ToDoList</b></center></h1>
+    {% endif %}
     <br><br><br>
     <div id="outer">
         <div class="inner"><button style="height:65px; width:130px" type="button" onclick="location.href='{% url 'register' %}'" class="btn btn-outline-success">Sign up</button></div>
