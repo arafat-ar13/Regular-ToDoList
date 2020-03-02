@@ -3,26 +3,23 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm
-from django.contrib.auth.models import User
 
 def register(request):
-    user = User.objects.get(username=request.user.username)
-    if user.is_authenticated:
+    if request.user.is_authenticated:
         messages.error(request, "You are already logged in")
         return redirect("todo-home")
 
+    if request.method == 'POST':
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get("username")
+            messages.success(request, f"Your account has been created. You can now login.")
+            return redirect("login")
     else:
-        if request.method == 'POST':
-            form = UserRegisterForm(request.POST)
-            if form.is_valid():
-                form.save()
-                username = form.cleaned_data.get("username")
-                messages.success(request, f"Your account has been created. You can now login.")
-                return redirect("login")
-        else:
-            form = UserRegisterForm()
+        form = UserRegisterForm()
 
-        return render(request, "users/register.html", {"form": form})
+    return render(request, "users/register.html", {"form": form})
 
 @login_required
 def profile(request):
