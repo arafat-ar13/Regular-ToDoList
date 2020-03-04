@@ -35,7 +35,9 @@
               <!-- Navbar Right Side -->
               <div class="navbar-nav">
                 {% if user.is_authenticated %}
-                    <a class="nav-item nav-link" href="{% url 'profile' %}">Profile</a>
+                    {% if request.path != "/profile/" %}
+                        <a class="nav-item nav-link" href="{% url 'profile' %}">Profile</a>
+                    {% endif %}
                     {% if request.path != "/about/" %}
                         <a class="nav-item nav-link" href="{% url 'todo-about' %}">About the App</a>
                     {% endif %}
@@ -101,7 +103,19 @@
         </div>
     </main>
     
+    <!-- Footer -->
+    {% if request.path == "/about/" or not user.is_authenticated and request.path == "/" %}
+        <br><br><br>
+        <footer style="background-color: rgb(23, 216, 174);" class="page-footer font-small">
 
+            <!-- Copyright -->
+            <div class="footer-copyright text-center py-3">© 2020 Arafat Khan
+            </div>
+            <!-- Copyright -->
+
+        </footer>
+    {% endif %}
+    <!-- Footer -->
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
