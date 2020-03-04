@@ -90,7 +90,6 @@
                         <h3>Your Sidebar</h3>
                         <p class='text-muted'>Get to work quickly!
                             <ul class="list-group">
-                                <li class="list-group-item list-group-item-light"><a href="{% url 'todo-create' %}">Create new task</a></li>
                                 <li class="list-group-item list-group-item-light"><a href="{% url 'todo-completed' %}">Completed tasks</a></li>
                                 {% if request.path != '/' %}
                                     <li class="list-group-item list-group-item-light"><a href="{% url 'todo-home' %}">Back to Home</a></li>
