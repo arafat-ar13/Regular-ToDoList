@@ -3,6 +3,18 @@
 {% load crispy_forms_tags %}
 {% load user_agents %}
     {% if user.is_authenticated %}
+        <div class="content section">
+            <form method="POST">
+                {% csrf_token %}
+                <fieldset class="form-group">
+                    <legend class="border-bottom mb-4">New ToDo!</legend>
+                    {{ form|crispy }}
+                </fieldset>
+                <div class="form-group">
+                    <button class="btn btn-outline-info" type="submit">Add</button>
+                </div>
+            </form>
+        </div>
         {% if user.profile.todos == 0 %}
             <div class="container-fluid">
                 <h2>You are on top of the world!</h2>
@@ -12,8 +24,7 @@
                 {% if user.username|lower == todo.creator|lower and not todo.is_checked %}
                     <article class="media content-section">
                         <div class="media-body">
-                            <h2><a class="article-title">{{ todo.title }}</a></h2>
-                            <button onclick="location.href='{% url 'todo-edit' todo.pk %}'" class="btn btn-outline-primary" type="submit">Edit</button>
+                            <h2><a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a></h2>
                             <button onclick="location.href='{% url 'todo-delete' todo.pk %}'" class="btn btn-outline-danger" type="submit">Delete</button>
                             <button onclick="location.href='{% url 'todo-check' todo.pk %}'" class="btn btn-outline-success" type="submit">Mark checked</button>
                             <br>

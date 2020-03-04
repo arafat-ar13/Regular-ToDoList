@@ -6,13 +6,36 @@ from django.urls import reverse_lazy
 from users.models import Profile
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
+from .forms import NewTaskForm
 
 
 def home(request):
+    # Checking for POST data from the creation of any new ToDo
+    if request.method == "POST":
+        form = NewTaskForm(request.POST)
+
+        if form.is_valid():
+            title = form.cleaned_data.get("title")
+            todo = ToDo(title=title)
+            todo.creator = request.user
+            todo.save()
+
+            user = User.objects.get(username=request.user.username)
+            user.profile.todos += 1
+            user.save()
+            messages.success(request, "Your new task has been added")
+
+            return redirect("todo-home")
+
+    else:
+        form = NewTaskForm()
+
     context = {
-        "todos": ToDo.objects.all()
+        "todos": ToDo.objects.all().order_by("-date_posted"),
+        "form": form
     }
-    return render(request, "ToDo/home.html", context)
+
+    return render(request, "ToDo/home.html", context=context)
 
 
 def about(request):
@@ -28,7 +51,7 @@ def delete(request, pk):
         user.save()
 
     todo.delete()
-    messages.info(request, "item removed !!") 
+    messages.info(request, "Item removed!!") 
 
     return redirect('todo-home') 
 
@@ -56,32 +79,11 @@ def uncheck_todo(request, pk):
     return redirect("todo-home")
 
 
-class TodoListView(ListView):
-    model = ToDo
-    template_name = "ToDo/home.html"
-    context_object_name = "todos"
-    ordering = ["-date_posted"]
-
-
 class TodoCompletedView(ListView):
     model = ToDo
     template_name = "ToDo/completed.html"
     context_object_name = "todos"
     ordering = ["-date_posted"]
-
-
-class TodoCreateView(LoginRequiredMixin, CreateView):
-    model = ToDo
-    fields = ["title"]
-    success_url = reverse_lazy("todo-home")
-    
-    def form_valid(self, form):
-        form.instance.creator = self.request.user
-        user = User.objects.get(username=self.request.user.username)
-        user.profile.todos += 1
-        user.save()
-        messages.success(self.request, "Your new task has been added")
-        return super().form_valid(form)
 
 
 class TodoUpdateView(LoginRequiredMixin, UpdateView):
