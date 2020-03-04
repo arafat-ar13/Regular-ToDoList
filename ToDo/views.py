@@ -6,16 +6,17 @@ from django.urls import reverse_lazy
 from users.models import Profile
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .forms import NewTaskForm
+from .forms import NewTaskForm, DueDateForm
+
+import datetime
 
 
 def home(request):
-    # Checking for POST data from the creation of any new ToDo
     if request.method == "POST":
-        form = NewTaskForm(request.POST)
+        add_form = NewTaskForm(request.POST)
 
-        if form.is_valid():
-            title = form.cleaned_data.get("title")
+        if add_form.is_valid():
+            title = add_form.cleaned_data.get("title")
             todo = ToDo(title=title)
             todo.creator = request.user
             todo.save()
@@ -28,14 +29,76 @@ def home(request):
             return redirect("todo-home")
 
     else:
-        form = NewTaskForm()
+        add_form = NewTaskForm()
 
     context = {
         "todos": ToDo.objects.all().order_by("-date_posted"),
-        "form": form
+        "add_form": add_form
     }
 
+    # Checking today's date and comparing colors of due dates
+    today = datetime.datetime.today()
+    todo_objects = ToDo.objects.all()
+
+    for todo in todo_objects:
+        if todo.due_date is not None:
+            due_date = datetime.datetime.strptime(todo.due_date, ("%b %d"))
+            if due_date.day > today.day:
+                todo.due_date_color = "green"
+            elif due_date.day == today.day:
+                todo.due_date_color = "blue"
+            elif due_date.day < today.day:
+                todo.due_date_color = "red"
+
+            todo.save()
+
     return render(request, "ToDo/home.html", context=context)
+
+
+def add_due_date(request, pk):
+    if request.method == "POST":
+        due_form = DueDateForm(request.POST)
+                
+        if due_form.is_valid():
+            days = due_form.cleaned_data.get("due_date")
+            
+            if days == "today":
+                days = 0
+            elif days == "tomorrow":
+                days = 1
+            else:
+                days = int(days)
+
+            today = datetime.datetime.today()
+            due_date = today + datetime.timedelta(days=days)
+            due_date = due_date.strftime("%b %d")
+
+            todo = ToDo.objects.get(pk=pk)
+            todo.due_date = due_date
+            todo.save()
+
+            messages.success(request, "Due Date added to task")
+
+            return redirect("todo-home")
+    else:
+        due_form = DueDateForm
+
+    context = {
+        "due_form": due_form
+    }
+
+    return render(request, "ToDo/due_dates.html", context=context)
+    
+
+def remove_due_date(request, pk):
+    todo = ToDo.objects.get(pk=pk)
+    todo.due_date = None
+    todo.due_date_color = None
+
+    todo.save()
+    messages.info(request, "Due Date removed")
+
+    return redirect("todo-home")
 
 
 def about(request):
