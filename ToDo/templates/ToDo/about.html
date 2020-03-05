@@ -2,6 +2,24 @@
 {% load static %}
 {% block content %}
 
+<style>
+    .accomplished:hover {
+        background-color: green;
+        color: white;
+    }
+
+    .working:hover {
+        background-color: yellow;
+        color: blue;
+    }
+
+    #make-bold {
+        font-weight: 800;
+        float: right;
+    }
+</style>
+
+
 <div class="jumbotron">
     <h1 class="display-4">Hello, world!</h1>
     <p class="lead" style="font-family: Cambria; background-color: aquamarine;">My 1st Web App made using Django and a bit of Bootstrap magic made for you</p>
@@ -15,12 +33,12 @@
         built right into Django. Many new features should be arriving over the span of months:
         <br><br>
         <div class="list-group">
-            <button type="button" class="list-group-item list-group-item-action">Make the app as mobile-friendly as possible</button>
-            <button type="button" class="list-group-item list-group-item-action">Task delete confirmation</button>
+            <button type="button" class="list-group-item list-group-item-action accomplished">Make the app as mobile-friendly as possible <div id="make-bold">Accomplished on March 2nd 2020!</div></button>
+            <button type="button" class="list-group-item list-group-item-action accomplished">Users will be able to add Due Dates to their tasks - which should turn red if it is past the date <div id="make-bold">Accomplished on March 5th 2020!</div></button>
+            <button type="button" class="list-group-item list-group-item-action working">Task delete confirmation <div id="make-bold">Working on this!</div></button>
             <button type="button" class="list-group-item list-group-item-action">Ability for users to reset your account password if they forget it by any chance</button>
             <button type="button" class="list-group-item list-group-item-action">Add Pagination feature to the "Completed Tasks" page so that the page doesn't get cluttered when users complete lots of tasks</button>
-            <button type="button" class="list-group-item list-group-item-action">Users will be able to add Due Dates to their tasks - which should turn red if it is past the date</button>
-            <button type="button" class="list-group-item list-group-item-action">IMAGINARY: A Insights page where users will be able to see a beautiful graph of how they are managing their tasks. Powered by sweet Matplotlib</button>
+            <button type="button" class="list-group-item list-group-item-action">IMAGINARY: An Insights page where users will be able to see a beautiful graph of how they are managing their tasks. Powered by sweet Matplotlib</button>
         </div>
         <br>
         The app itself is hosted at PythonAnywhere so a shoutout to them as well.

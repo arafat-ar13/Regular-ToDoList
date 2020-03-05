@@ -23,7 +23,7 @@
     <header class="site-header">
         <nav class="navbar navbar-nav navbar-dark bg-steel navbar-expand-md fixed-top nav-fill">
           <div class="container">
-            <a style="padding-left:15px" class="navbar-brand mr-4" href="{% url 'todo-home' %}">Regular ToDo</a>
+            <a style="padding-left:15px" class="navbar-brand mr-4 nav-link" href="{% url 'todo-home' %}">Regular ToDo</a>
             {% if user.is_authenticated %}
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -101,7 +101,7 @@
             {% endif %}
         </div>
     </main>
-    
+
     <!-- Footer -->
     {% if request.path == "/about/" or not user.is_authenticated and request.path == "/" %}
         <br><br><br>
