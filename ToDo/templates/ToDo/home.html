@@ -2,17 +2,18 @@
 {% block content %}
 {% load crispy_forms_tags %}
 {% load user_agents %}
+
     {% if user.is_authenticated %}
         <div class="content section">
             <form method="POST">
                 {% csrf_token %}
-                <fieldset class="form-group">
+                <fieldset class="form-group dark-mode-assist">
                     <legend class="border-bottom mb-4">New ToDo!</legend>
                     {{ add_form|crispy }}
+                    <div class="form-group">
+                        <button class="btn btn-outline-info" type="submit" name="add-task">Add</button>
+                    </div>
                 </fieldset>
-                <div class="form-group">
-                    <button class="btn btn-outline-info" type="submit" name="add-task">Add</button>
-                </div>
             </form>
         </div>
 
@@ -60,7 +61,7 @@
     {% if request.user_agent.is_mobile %}
         <h1 style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px;"><center>Welcome to my app<br> <b style="background-color: cyan">Regular ToDoList</b></center></h1>
     {% else %}
-    
+
         <style>
             #outer
             {

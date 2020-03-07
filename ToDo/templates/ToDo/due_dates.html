@@ -5,7 +5,7 @@
 <div class="content section">
     <form method="POST">
         {% csrf_token %}
-        <fieldset class="form-group">
+        <fieldset class="form-group dark-mode-assist">
             <legend class="border-bottom mb-4">Due in (days)</legend>
             {{ due_form|crispy }}
         </fieldset>

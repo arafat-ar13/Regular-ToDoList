@@ -17,7 +17,7 @@
         </div>
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-            <fieldset class="form-group">
+            <fieldset class="form-group dark-mode-assist">
                 <legend class="border-bottom mb-4">Profile info</legend>
                 {{ u_form|crispy }}
                 {{ p_form|crispy }}

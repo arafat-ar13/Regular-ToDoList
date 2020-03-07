@@ -9,7 +9,12 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
-    <link rel="stylesheet" type="text/css" href="{% static 'ToDo/main.css' %}">
+    {% if user.profile.has_dark_mode %}
+        <link rel="stylesheet" type="text/css" href="{% static 'ToDo/main_dark.css' %}">
+    {% else %}
+        <link rel="stylesheet" type="text/css" href="{% static 'ToDo/main_light.css' %}">
+    {% endif %}
+
     <link rel="shortcut icon" href="{% static 'favicon.ico' type='image/x-icon' %}">
 
     {% if title %}
@@ -90,9 +95,16 @@
                         <h3>Your Sidebar</h3>
                         <p class='text-muted'>Get to work quickly!
                             <ul class="list-group">
-                                <li class="list-group-item list-group-item-light"><a href="{% url 'todo-completed' %}">Completed tasks</a></li>
+                                <li class="list-group-item dark-mode-assist-section"><a href="{% url 'todo-completed' %}">Completed tasks</a></li>
+                                <!-- Dark Mode Handling -->
+                                {% if user.profile.has_dark_mode %}
+                                    <li class="list-group-item dark-mode-assist-section"><a href="{% url 'todo-darkmode' %}">Disable Dark Mode</a></li>
+                                {% else %}
+                                    <li class="list-group-item dark-mode-assist-section"><a href="{% url 'todo-darkmode' %}">Enable Dark Mode</a></li>
+                                {% endif %}
+
                                 {% if request.path != '/' %}
-                                    <li class="list-group-item list-group-item-light"><a href="{% url 'todo-home' %}">Back to Home</a></li>
+                                    <li class="list-group-item dark-mode-assist-section"><a href="{% url 'todo-home' %}">Back to Home</a></li>
                                 {% endif %}
                             </ul>
                         </p>

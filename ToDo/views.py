@@ -58,10 +58,10 @@ def home(request):
 def add_due_date(request, pk):
     if request.method == "POST":
         due_form = DueDateForm(request.POST)
-                
+
         if due_form.is_valid():
             days = due_form.cleaned_data.get("due_date")
-            
+
             if days == "today":
                 days = 0
             elif days == "tomorrow":
@@ -88,7 +88,7 @@ def add_due_date(request, pk):
     }
 
     return render(request, "ToDo/due_dates.html", context=context)
-    
+
 
 def remove_due_date(request, pk):
     todo = ToDo.objects.get(pk=pk)
@@ -105,6 +105,22 @@ def about(request):
     return render(request, "ToDo/about.html")
 
 
+def toggle_dark_mode(request):
+    user = User.objects.get(username=request.user.username)
+    if user.profile.has_dark_mode:
+        user.profile.has_dark_mode = False
+        message = "Dark Mode disabled"
+    else:
+        user.profile.has_dark_mode = True
+        message = "Welcome to the Dark Side"
+
+    user.save()
+
+    messages.success(request, message)
+
+    return redirect("todo-home")
+
+
 def delete(request, pk):
     todo = ToDo.objects.get(pk=pk)
 
@@ -114,9 +130,9 @@ def delete(request, pk):
         user.save()
 
     todo.delete()
-    messages.info(request, "Item removed!!") 
+    messages.info(request, "Item removed!!")
 
-    return redirect('todo-home') 
+    return redirect('todo-home')
 
 def check_todo(request, pk):
     todo = ToDo.objects.get(pk=pk)

@@ -6,6 +6,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.ImageField(default="default.jpg", upload_to="profile_pics")
     todos = models.IntegerField(default=0)
+    has_dark_mode = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} Profile"
