@@ -8,6 +8,21 @@ body {
     color: #ffffff;
   }
 
+  .form-control  {
+      background: #1f1a0d;
+      color: #ffffff;
+  }
+
+  .form-control:focus  {
+      background: #15181a;
+      color: #ffffff;
+      outline: 0.5px dotted #1ae3ed
+  }
+
+  .asteriskField {
+    display: none;
+  }
+
   .dark-mode-assist {
     color: #ffffff;
   }
