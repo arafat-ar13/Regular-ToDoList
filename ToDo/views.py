@@ -31,28 +31,31 @@ def home(request):
     else:
         add_form = NewTaskForm()
 
-    user = User.objects.get(username=request.user.username)
+    todos = ToDo.objects.all()
 
-    # Handling how the user's tasks should be sorted
-    if user.profile.sort_todos_by == "date_added":
-        sorter = "date_posted"
-        todos = ToDo.objects.all().order_by(sorter).reverse()
-    elif user.profile.sort_todos_by == "due_date":
-        sorter = "due_date"
+    if request.user.is_authenticated:
+        user = User.objects.get(username=request.user.username)
 
-        due_todos = []
-        normal_todos = []
+        # Handling how the user's tasks should be sorted
+        if user.profile.sort_todos_by == "date_added":
+            sorter = "date_posted"
+            todos = ToDo.objects.all().order_by(sorter).reverse()
+        elif user.profile.sort_todos_by == "due_date":
+            sorter = "due_date"
 
-        for todo in ToDo.objects.all().order_by("due_date"):
-            if todo.due_date != None:
-                due_todos.append(todo)
+            due_todos = []
+            normal_todos = []
 
-        for todo in ToDo.objects.all():
-            if todo.due_date == None:
-                normal_todos.append(todo)
-                normal_todos.reverse()
+            for todo in ToDo.objects.all().order_by("due_date"):
+                if todo.due_date != None:
+                    due_todos.append(todo)
 
-        todos = due_todos + normal_todos
+            for todo in ToDo.objects.all():
+                if todo.due_date == None:
+                    normal_todos.append(todo)
+
+            normal_todos.reverse()
+            todos = due_todos + normal_todos
 
     context = {
         "todos": todos,
