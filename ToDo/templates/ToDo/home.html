@@ -56,7 +56,7 @@
                             {% if todo.due_date == None %}
                                 <button onclick="location.href='{% url 'todo-due' todo.pk %}'" class="btn btn-outline-info" type="submit">Add Due Date</button>
                             {% else %}
-                                <p2 style="font-weight: 1000; color: {{ todo.due_date_color }}; ">Due on: {{ todo.due_date }}</p2>
+                                <p2 style="font-weight: 1000; color: {{ todo.due_date_color }}; ">Due on: {{ todo.due_date|date:"F d" }}</p2>
                                 <button onclick="location.href='{% url 'todo-due-remove' todo.pk %}'" class="btn btn-outline-primary" type="submit">Remove Due Date</button>
                             {% endif %}
                             <br>

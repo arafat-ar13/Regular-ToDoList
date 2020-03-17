@@ -7,7 +7,7 @@ class ToDo(models.Model):
     date_posted = models.DateTimeField(default=timezone.now)
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
     is_checked = models.BooleanField(default=False)
-    due_date = models.CharField(max_length=150, null=True, blank=True)
+    due_date = models.DateTimeField(null=True, blank=True)
     due_date_color = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):

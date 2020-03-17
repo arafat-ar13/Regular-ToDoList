@@ -31,8 +31,31 @@ def home(request):
     else:
         add_form = NewTaskForm()
 
+    user = User.objects.get(username=request.user.username)
+
+    # Handling how the user's tasks should be sorted
+    if user.profile.sort_todos_by == "date_added":
+        sorter = "date_posted"
+        todos = ToDo.objects.all().order_by(sorter).reverse()
+    elif user.profile.sort_todos_by == "due_date":
+        sorter = "due_date"
+
+        due_todos = []
+        normal_todos = []
+
+        for todo in ToDo.objects.all().order_by("due_date"):
+            if todo.due_date != None:
+                due_todos.append(todo)
+
+        for todo in ToDo.objects.all():
+            if todo.due_date == None:
+                normal_todos.append(todo)
+                normal_todos.reverse()
+
+        todos = due_todos + normal_todos
+
     context = {
-        "todos": ToDo.objects.all().order_by("-date_posted"),
+        "todos": todos,
         "add_form": add_form
     }
 
@@ -42,12 +65,11 @@ def home(request):
 
     for todo in todo_objects:
         if todo.due_date is not None:
-            due_date = datetime.datetime.strptime(todo.due_date, ("%b %d"))
-            if due_date.day > today.day:
+            if todo.due_date.day > today.day:
                 todo.due_date_color = "green"
-            elif due_date.day == today.day:
+            elif todo.due_date.day == today.day:
                 todo.due_date_color = "blue"
-            elif due_date.day < today.day:
+            elif todo.due_date.day < today.day:
                 todo.due_date_color = "red"
 
             todo.save()
@@ -66,12 +88,17 @@ def add_due_date(request, pk):
                 days = 0
             elif days == "tomorrow":
                 days = 1
+            elif days == "next week":
+                days = 7
+            elif days == "yesterday":
+                days = -1
+            elif days == "last week":
+                days = -7
             else:
                 days = int(days)
 
             today = datetime.datetime.today()
             due_date = today + datetime.timedelta(days=days)
-            due_date = due_date.strftime("%b %d")
 
             todo = ToDo.objects.get(pk=pk)
             todo.due_date = due_date
@@ -105,8 +132,23 @@ def about(request):
     return render(request, "ToDo/about.html")
 
 
+def toggle_user_sort(request):
+    user = User.objects.get(username=request.user.username)
+    if user.profile.sort_todos_by == "date_added":
+        user.profile.sort_todos_by = "due_date"
+    else:
+        user.profile.sort_todos_by = "date_added"
+
+    user.save()
+
+    messages.success(request, "Your sort order altered")
+
+    return redirect("todo-home")
+
+
 def toggle_dark_mode(request):
     user = User.objects.get(username=request.user.username)
+
     if user.profile.has_dark_mode:
         user.profile.has_dark_mode = False
         message = "Dark Mode disabled"

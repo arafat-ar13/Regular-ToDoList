@@ -7,6 +7,7 @@ class Profile(models.Model):
     image = models.ImageField(default="default.jpg", upload_to="profile_pics")
     todos = models.IntegerField(default=0)
     has_dark_mode = models.BooleanField(default=False)
+    sort_todos_by = models.CharField(max_length=100, default="date_added")
 
     def __str__(self):
         return f"{self.user.username} Profile"
