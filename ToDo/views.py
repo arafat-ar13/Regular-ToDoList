@@ -13,9 +13,39 @@ import datetime
 
 def home(request):
     if request.method == "POST":
+        due_form = DueDateForm(request.POST)
         add_form = NewTaskForm(request.POST)
 
-        if add_form.is_valid():
+        if due_form.is_valid():
+            days = due_form.cleaned_data.get("due_date").lower()
+
+            if days == "today":
+                days = 0
+            elif days == "tomorrow":
+                days = 1
+            elif days == "next week":
+                days = 7
+            elif days == "yesterday":
+                days = -1
+            elif days == "last week":
+                days = -7
+            else:
+                days = int(days)
+
+            today = datetime.datetime.today()
+            due_date = today + datetime.timedelta(days=days)
+
+
+            todo = ToDo.objects.get(pk=int(request.POST.get("title", "")))
+            todo.due_date = due_date
+            todo.save()
+
+            messages.success(request, "Due Date added to task")
+
+            return redirect("todo-home")
+
+
+        elif add_form.is_valid():
             title = add_form.cleaned_data.get("title")
             todo = ToDo(title=title)
             todo.creator = request.user
@@ -30,13 +60,14 @@ def home(request):
 
     else:
         add_form = NewTaskForm()
+        due_form = DueDateForm()
 
     todos = ToDo.objects.all()
 
+    # Handling how the user's tasks should be sorted
     if request.user.is_authenticated:
         user = User.objects.get(username=request.user.username)
 
-        # Handling how the user's tasks should be sorted
         if user.profile.sort_todos_by == "date_added":
             sorter = "date_posted"
             todos = ToDo.objects.all().order_by(sorter).reverse()
@@ -47,20 +78,16 @@ def home(request):
             normal_todos = []
 
             for todo in ToDo.objects.all().order_by("due_date"):
-                if todo.due_date != None:
+                if todo.due_date is not None:
                     due_todos.append(todo)
 
             for todo in ToDo.objects.all():
-                if todo.due_date == None:
+                if todo.due_date is None:
                     normal_todos.append(todo)
 
             normal_todos.reverse()
             todos = due_todos + normal_todos
 
-    context = {
-        "todos": todos,
-        "add_form": add_form
-    }
 
     # Checking today's date and comparing colors of due dates
     today = datetime.datetime.today()
@@ -76,6 +103,13 @@ def home(request):
                 todo.due_date_color = "red"
 
             todo.save()
+
+
+    context = {
+        "todos": todos,
+        "add_form": add_form,
+        "due_form": due_form
+    }
 
     return render(request, "ToDo/home.html", context=context)
 
@@ -111,7 +145,7 @@ def add_due_date(request, pk):
 
             return redirect("todo-home")
     else:
-        due_form = DueDateForm
+        due_form = DueDateForm()
 
     context = {
         "due_form": due_form
