@@ -26,6 +26,11 @@
                     <article class="media content-section">
                         <div class="media-body">
                             <h2><a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a></h2>
+                            {% if todo.num_of_subtasks != 0 %}
+                            <!-- Showing the number of subtasks -->
+                                <p class="dark-mode-assist" style="font-family: Calibri; font-size: 3ch;">Subtasks: {{ todo.num_of_subtasks }} <button style="font-size: 18px;" onclick="location.href='{% url 'todo-add-subtask' todo.pk %}'" class="btn btn-outline-info" type="submit">View them</button></p>
+                            {% endif %}
+
                             <!-- Button trigger modal -->
                             <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#exampleModalCenter">
                               Delete
@@ -54,7 +59,10 @@
                             <!-- Modal ends -->
 
                             <button onclick="location.href='{% url 'todo-check' todo.pk %}'" class="btn btn-outline-success" type="submit">Mark checked</button>
-
+                            {% if todo.num_of_subtasks == 0 %}
+                                <button onclick="location.href='{% url 'todo-add-subtask' todo.pk %}'" class="btn btn-outline-info" type="submit">Add Sub Tasks</button>
+                            {% endif %}
+                            
                             <!-- Due Date button -->
                             {% if todo.due_date == None %}
                                 <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample{{ todo.pk }}" role="button" aria-expanded="false" aria-controls="multiCollapseExample{{ todo.pk }}">Add Due Date</a>
@@ -85,6 +93,7 @@
                                 <p2 style="font-weight: 1000; color: {{ todo.due_date_color }}; ">Due on: {{ todo.due_date|date:"F d" }}</p2>
                                 <button onclick="location.href='{% url 'todo-due-remove' todo.pk %}'" class="btn btn-outline-primary" type="submit">Remove Due Date</button>
                             {% endif %}
+
                             <br>
                             <div class="article-metadata">
                                 <small class="text-muted">{{ todo.date_posted|date:"F d, Y" }}</small>

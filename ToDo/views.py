@@ -1,12 +1,12 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, HttpResponseRedirect
 from django.contrib import messages
-from .models import ToDo
+from .models import ToDo, SubTask
 from django.views.generic import ListView, CreateView, UpdateView
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from users.models import Profile
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .forms import NewTaskForm, DueDateForm
+from .forms import NewTaskForm, DueDateForm, SubTaskForm
 
 import datetime
 
@@ -53,6 +53,7 @@ def home(request):
 
             user = User.objects.get(username=request.user.username)
             user.profile.todos += 1
+            user.profile.total_todos += 1
             user.save()
             messages.success(request, "Your new task has been added")
 
@@ -102,7 +103,7 @@ def home(request):
             elif todo.due_date.day < today.day:
                 todo.due_date_color = "red"
 
-            todo.save()
+            todo.save()     
 
 
     context = {
@@ -112,46 +113,6 @@ def home(request):
     }
 
     return render(request, "ToDo/home.html", context=context)
-
-
-def add_due_date(request, pk):
-    if request.method == "POST":
-        due_form = DueDateForm(request.POST)
-
-        if due_form.is_valid():
-            days = due_form.cleaned_data.get("due_date")
-
-            if days == "today":
-                days = 0
-            elif days == "tomorrow":
-                days = 1
-            elif days == "next week":
-                days = 7
-            elif days == "yesterday":
-                days = -1
-            elif days == "last week":
-                days = -7
-            else:
-                days = int(days)
-
-            today = datetime.datetime.today()
-            due_date = today + datetime.timedelta(days=days)
-
-            todo = ToDo.objects.get(pk=pk)
-            todo.due_date = due_date
-            todo.save()
-
-            messages.success(request, "Due Date added to task")
-
-            return redirect("todo-home")
-    else:
-        due_form = DueDateForm()
-
-    context = {
-        "due_form": due_form
-    }
-
-    return render(request, "ToDo/due_dates.html", context=context)
 
 
 def remove_due_date(request, pk):
@@ -197,7 +158,7 @@ def toggle_dark_mode(request):
 
     messages.success(request, message)
 
-    return redirect("todo-home")
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def delete(request, pk):
@@ -206,12 +167,14 @@ def delete(request, pk):
     if not todo.is_checked:
         user = User.objects.get(username=request.user.username)
         user.profile.todos -= 1
+        user.profile.total_todos -= 1
         user.save()
 
     todo.delete()
     messages.info(request, "Item removed!!")
 
     return redirect('todo-home')
+
 
 def check_todo(request, pk):
     todo = ToDo.objects.get(pk=pk)
@@ -237,6 +200,75 @@ def uncheck_todo(request, pk):
     return redirect("todo-home")
 
 
+def add_subtask(request, pk):
+    todo = ToDo.objects.get(pk=pk)
+    subtasks = SubTask.objects.filter(parent_task=todo.title)
+
+    if request.method == "POST":
+        subtask_form = SubTaskForm(request.POST)
+
+        if subtask_form.is_valid():
+            subtask_title = subtask_form.cleaned_data.get("sub_task")
+
+            subtask = SubTask(title=subtask_title)
+            subtask.parent_task = todo.title
+            subtask.identification_id = todo.pk
+
+            todo.num_of_subtasks += 1
+            todo.save()
+
+            subtask.save()
+
+            messages.success(request, "Subtask added")
+
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+    
+    else:
+        subtask_form = SubTaskForm()
+
+
+    context = {
+        "todo": todo,
+        "subtask_form": subtask_form,
+        "subtasks": subtasks
+    }
+
+    return render(request, "ToDo/subtasks.html", context=context)
+
+
+def delete_subtask(request, pk):
+    subtask = SubTask.objects.get(pk=int(pk))
+
+    parent_todo = ToDo.objects.get(pk=subtask.identification_id)
+    parent_todo.num_of_subtasks -= 1
+    parent_todo.save()
+
+    subtask.delete()
+
+    messages.info(request, "Item removed!!")
+
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+
+def toggle_subtask(request, pk):
+    subtask = SubTask.objects.get(pk=int(pk))
+
+    if subtask.done:
+        subtask.done = False
+        subtask.save()
+
+        messages.info(request, "Okay, take your time!")
+
+    else:
+
+        subtask.done = True
+        subtask.save()
+
+        messages.info(request, "Awesome!")
+
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+
 class TodoCompletedView(ListView):
     model = ToDo
     template_name = "ToDo/completed.html"
@@ -252,4 +284,17 @@ class TodoUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         form.instance.creator = self.request.user
         messages.info(self.request, "Your task has been edited")
+        return super().form_valid(form)
+
+
+class SubtaskUpdateView(LoginRequiredMixin, UpdateView):
+    model = SubTask
+    fields = ["title"]
+    success_url = reverse_lazy("todo-add-subtask")
+
+    def form_valid(self, form):
+        form.instance.creator = self.request.user
+        messages.info(self.request, "Your subtask has been edited")
+
+
         return super().form_valid(form)

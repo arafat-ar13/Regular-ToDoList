@@ -6,3 +6,7 @@ class NewTaskForm(forms.Form):
 
 class DueDateForm(forms.Form):
     due_date = forms.CharField(max_length=150, help_text="eg. 'tomorrow', 'today', yesterday, next week, 5")
+
+
+class SubTaskForm(forms.Form):
+    sub_task = forms.CharField(max_length=150)
