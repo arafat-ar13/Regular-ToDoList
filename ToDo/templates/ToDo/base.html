@@ -103,10 +103,12 @@
                                     <li class="list-group-item dark-mode-assist-section"><a href="{% url 'todo-darkmode' %}">Enable Dark Mode</a></li>
                                 {% endif %}
 
-                                {% if user.profile.sort_todos_by == "date_added" %}
-                                    <li class="list-group-item dark-mode-assist-section">Sorted by: <b>{{ user.profile.sort_todos_by }}</b><br><a href="{% url 'todo-user-sort' %}">Sort by Due Date?</a></li>
-                                {% else %}
-                                    <li class="list-group-item dark-mode-assist-section">Sorted by: <b>{{ user.profile.sort_todos_by }}</b><br><a href="{% url 'todo-user-sort' %}">Sort by Date Added?</a></li>
+                                {% if request.path == "/" %}
+                                    {% if user.profile.sort_todos_by == "date_added" %}
+                                        <li class="list-group-item dark-mode-assist-section">Sorted by: <b>{{ user.profile.sort_todos_by }}</b><br><a href="{% url 'todo-user-sort' %}">Sort by Due Date?</a></li>
+                                    {% else %}
+                                        <li class="list-group-item dark-mode-assist-section">Sorted by: <b>{{ user.profile.sort_todos_by }}</b><br><a href="{% url 'todo-user-sort' %}">Sort by Date Added?</a></li>
+                                    {% endif %}
                                 {% endif %}
 
                                 {% if request.path != '/' %}

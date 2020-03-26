@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect, HttpResponseRedirect
 from django.contrib import messages
-from .models import ToDo, SubTask
+from .models import ToDo, SubTask, Notes
 from django.views.generic import ListView, CreateView, UpdateView
 from django.urls import reverse, reverse_lazy
 from users.models import Profile
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .forms import NewTaskForm, DueDateForm, SubTaskForm
+from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm
 
 import datetime
 
@@ -72,10 +72,10 @@ def home(request):
 
     for todo in todo_objects:
         if todo.due_date is not None:
-            if todo.due_date > today:
-                todo.due_date_color = "green"
-            elif todo.due_date.day == today.day:
+            if todo.due_date.day == today.day:
                 todo.due_date_color = "blue"
+            elif todo.due_date > today:
+                todo.due_date_color = "green"
             elif todo.due_date < today:
                 todo.due_date_color = "red"
 
@@ -127,6 +127,57 @@ def remove_due_date(request, pk):
 
 def about(request):
     return render(request, "ToDo/about.html")
+
+
+def add_todo_note(request, pk):
+    todo = ToDo.objects.get(pk=pk)
+    try:
+        note = Notes.objects.get(parent_task=todo.title)
+    except:
+        note = Notes()
+
+    if request.method == "POST":
+        note_form = ToDoNotesForm(request.POST)
+
+        if note_form.is_valid():
+            task_notes = note_form.cleaned_data.get("task_notes")
+
+            new_note = Notes(content=task_notes)
+            new_note.parent_task = todo.title
+            new_note.identification_id = todo.pk
+            new_note.save()
+
+            todo.notes = True
+            todo.save()
+
+            messages.success(request, "Your notes are saved")
+
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+    else:
+        note_form = ToDoNotesForm()
+
+    context = {
+        "todo": todo,
+        "note_form": note_form,
+        "note": note
+    }
+
+    return render(request, "ToDo/task_notes.html", context=context)
+
+
+def delete_notes(request, pk):
+    note = Notes.objects.get(pk=pk)
+
+    todo = ToDo.objects.get(pk=note.identification_id)
+    todo.notes = False
+    todo.save()
+
+    note.delete()
+
+    messages.info(request, "Your notes are deleted")
+
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def toggle_user_sort(request):
@@ -297,5 +348,16 @@ class SubtaskUpdateView(LoginRequiredMixin, UpdateView):
         form.instance.creator = self.request.user
         messages.info(self.request, "Your subtask has been edited")
 
+
+        return super().form_valid(form)
+
+
+class ToDoNotesUpdateView(LoginRequiredMixin, UpdateView):
+    model = Notes
+    fields = ["content"]
+
+    def form_valid(self, form):
+        form.instance.creator = self.request.user
+        messages.info(self.request, "Your notes have been edited")
 
         return super().form_valid(form)

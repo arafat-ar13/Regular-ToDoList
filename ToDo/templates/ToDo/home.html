@@ -25,7 +25,13 @@
                 {% if user.username|lower == todo.creator|lower and not todo.is_checked %}
                     <article class="media content-section">
                         <div class="media-body">
-                            <h2><a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a></h2>
+
+                            {% if todo.notes %}
+                                <h2><a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a> <button onclick="location.href='{% url 'todo-add-notes' todo.pk %}'" class="btn btn-outline-warning" type="submit">View notes</button></h2>
+                            {% else %}
+                                <h2><a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a> <button onclick="location.href='{% url 'todo-add-notes' todo.pk %}'" class="btn btn-outline-warning" type="submit">Add notes</button></h2>
+                            {% endif %}
+
                             {% if todo.num_of_subtasks != 0 %}
                             <!-- Showing the number of subtasks -->
                                 <p class="dark-mode-assist" style="font-family: Calibri; font-size: 3ch;">Subtasks: {{ todo.num_of_subtasks }} <button style="font-size: 18px;" onclick="location.href='{% url 'todo-add-subtask' todo.pk %}'" class="btn btn-outline-info" type="submit">View them</button></p>

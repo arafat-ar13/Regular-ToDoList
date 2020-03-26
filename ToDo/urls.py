@@ -3,7 +3,8 @@ from . import views
 from .views import (
     TodoCompletedView,
     TodoUpdateView,
-    SubtaskUpdateView
+    SubtaskUpdateView,
+    ToDoNotesUpdateView
 )
 
 urlpatterns = [
@@ -19,5 +20,8 @@ urlpatterns = [
     path('todo/new_subtask/<int:pk>', views.add_subtask, name="todo-add-subtask"),
     path('todo/edit_subtask/<int:pk>', SubtaskUpdateView.as_view(), name="todo-edit-subtask"),
     path('todo/delete_subtask/<int:pk>', views.delete_subtask, name="todo-delete-subtask"),
-    path('todo/toggle_subtask/<int:pk>', views.toggle_subtask, name="todo-toggle-subtask")
+    path('todo/toggle_subtask/<int:pk>', views.toggle_subtask, name="todo-toggle-subtask"),
+    path('todo/add_notes/<int:pk>', views.add_todo_note, name="todo-add-notes"),
+    path('todo/delete_notes/<int:pk>', views.delete_notes, name="todo-delete-notes"),
+    path('todo/edit_notes/<int:pk>', ToDoNotesUpdateView.as_view(), name="todo-edit-notes")
 ]

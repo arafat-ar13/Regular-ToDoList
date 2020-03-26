@@ -10,3 +10,7 @@ class DueDateForm(forms.Form):
 
 class SubTaskForm(forms.Form):
     sub_task = forms.CharField(max_length=150)
+
+
+class ToDoNotesForm(forms.Form):
+    task_notes = forms.CharField(widget=forms.Textarea, help_text="Add anything that's important to the task")
