@@ -10,9 +10,11 @@
                     <button onclick="location.href='{% url 'todo-delete' todo.pk %}'" class="btn btn-outline-danger" type="submit">Delete</button>
                     <button onclick="location.href='{% url 'todo-uncheck' todo.pk %}'" class="btn btn-outline-success" type="submit">Uncheck</button>
                     <br>
-                    <div class="article-metadata">
-                        <small class="text-muted">{{ todo.date_posted|date:"F d, Y" }}</small>
-                    </div>
+                    {% if todo.date_completed != None %}
+                        <div class="article-metadata">
+                            <small class="text-muted">Completed on: {{ todo.date_completed|date:"F d, Y" }}</small>
+                        </div>
+                    {% endif %}
                 </div>
             </article>
         {% endif %}

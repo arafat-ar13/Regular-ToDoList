@@ -65,6 +65,22 @@ def home(request):
 
     todos = ToDo.objects.all()
 
+
+    # Checking today's date and comparing colors of due dates
+    today = datetime.datetime.now(datetime.timezone.utc)
+    todo_objects = ToDo.objects.all()
+
+    for todo in todo_objects:
+        if todo.due_date is not None:
+            if todo.due_date > today:
+                todo.due_date_color = "green"
+            elif todo.due_date.day == today.day:
+                todo.due_date_color = "blue"
+            elif todo.due_date < today:
+                todo.due_date_color = "red"
+
+            todo.save()   
+
     # Handling how the user's tasks should be sorted
     if request.user.is_authenticated:
         user = User.objects.get(username=request.user.username)
@@ -87,24 +103,7 @@ def home(request):
                     normal_todos.append(todo)
 
             normal_todos.reverse()
-            todos = due_todos + normal_todos
-
-
-    # Checking today's date and comparing colors of due dates
-    today = datetime.datetime.today()
-    todo_objects = ToDo.objects.all()
-
-    for todo in todo_objects:
-        if todo.due_date is not None:
-            if todo.due_date.day > today.day:
-                todo.due_date_color = "green"
-            elif todo.due_date.day == today.day:
-                todo.due_date_color = "blue"
-            elif todo.due_date.day < today.day:
-                todo.due_date_color = "red"
-
-            todo.save()     
-
+            todos = due_todos + normal_todos  
 
     context = {
         "todos": todos,
@@ -173,12 +172,13 @@ def delete(request, pk):
     todo.delete()
     messages.info(request, "Item removed!!")
 
-    return redirect('todo-home')
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def check_todo(request, pk):
     todo = ToDo.objects.get(pk=pk)
     todo.is_checked = True
+    todo.date_completed = datetime.datetime.now()
     todo.save()
     messages.success(request, "Sweeet! Congrats!!")
 
@@ -186,18 +186,19 @@ def check_todo(request, pk):
     user.profile.todos -= 1
     user.save()
 
-    return redirect("todo-home")
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 def uncheck_todo(request, pk):
     todo = ToDo.objects.get(pk=pk)
     todo.is_checked = False
+    todo.date_completed = None
     todo.save()
 
     user = User.objects.get(username=request.user.username)
     user.profile.todos += 1
     user.save()
 
-    return redirect("todo-home")
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def add_subtask(request, pk):
@@ -290,7 +291,7 @@ class TodoUpdateView(LoginRequiredMixin, UpdateView):
 class SubtaskUpdateView(LoginRequiredMixin, UpdateView):
     model = SubTask
     fields = ["title"]
-    success_url = reverse_lazy("todo-add-subtask")
+    success_url = reverse_lazy("todo-home")
 
     def form_valid(self, form):
         form.instance.creator = self.request.user

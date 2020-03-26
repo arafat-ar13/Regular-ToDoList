@@ -10,6 +10,8 @@ class ToDo(models.Model):
     due_date = models.DateTimeField(null=True, blank=True)
     due_date_color = models.CharField(max_length=100, null=True, blank=True)
     num_of_subtasks = models.IntegerField(default=0)
+    date_completed = models.DateTimeField(null=True, blank=True)
+    notes = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
@@ -24,3 +26,15 @@ class SubTask(models.Model):
 
     def __str__(self):
         return self.title
+        
+
+class Notes(models.Model):
+    content = models.TextField(help_text="Add anything that's important to the task")
+    date_added = models.DateField(auto_now_add=True)
+    date_edited = models.DateField(auto_now=True)
+    # The attrs below will help in identifying which is the parent task of the particular sub task
+    parent_task = models.CharField(max_length=150)
+    identification_id = models.IntegerField(default="NOT_PROVIDED")
+
+    def __str__(self):
+        return f"Notes of {self.parent_task}"
