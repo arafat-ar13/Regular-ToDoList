@@ -23,5 +23,5 @@ urlpatterns = [
     path('todo/toggle_subtask/<int:pk>', views.toggle_subtask, name="todo-toggle-subtask"),
     path('todo/add_notes/<int:pk>', views.add_todo_note, name="todo-add-notes"),
     path('todo/delete_notes/<int:pk>', views.delete_notes, name="todo-delete-notes"),
-    path('todo/edit_notes/<int:pk>', ToDoNotesUpdateView.as_view(), name="todo-edit-notes")
+    path('todo/edit_notes/<int:pk>', ToDoNotesUpdateView.as_view(), name="todo-edit-notes"),
 ]

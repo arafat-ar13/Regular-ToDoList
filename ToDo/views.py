@@ -79,7 +79,7 @@ def home(request):
             elif todo.due_date < today:
                 todo.due_date_color = "red"
 
-            todo.save()   
+            todo.save()
 
     # Handling how the user's tasks should be sorted
     if request.user.is_authenticated:
@@ -103,7 +103,7 @@ def home(request):
                     normal_todos.append(todo)
 
             normal_todos.reverse()
-            todos = due_todos + normal_todos  
+            todos = due_todos + normal_todos
 
     context = {
         "todos": todos,
@@ -127,6 +127,10 @@ def remove_due_date(request, pk):
 
 def about(request):
     return render(request, "ToDo/about.html")
+
+
+def render_insights(request):
+    return render(request, "ToDo/insights.html")
 
 
 def add_todo_note(request, pk):
@@ -274,7 +278,7 @@ def add_subtask(request, pk):
             messages.success(request, "Subtask added")
 
             return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-    
+
     else:
         subtask_form = SubTaskForm()
 
@@ -355,6 +359,7 @@ class SubtaskUpdateView(LoginRequiredMixin, UpdateView):
 class ToDoNotesUpdateView(LoginRequiredMixin, UpdateView):
     model = Notes
     fields = ["content"]
+    success_url = reverse_lazy("todo-home")
 
     def form_valid(self, form):
         form.instance.creator = self.request.user

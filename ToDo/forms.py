@@ -13,4 +13,4 @@ class SubTaskForm(forms.Form):
 
 
 class ToDoNotesForm(forms.Form):
-    task_notes = forms.CharField(widget=forms.Textarea, help_text="Add anything that's important to the task")
+    task_notes = forms.CharField(widget=forms.Textarea, help_text="Add anything that's important to the task", strip=False)

@@ -95,7 +95,10 @@
                         <h3>Your Sidebar</h3>
                         <p class='text-muted'>Get to work quickly!
                             <ul class="list-group">
-                                <li class="list-group-item dark-mode-assist-section"><a href="{% url 'todo-completed' %}">Completed tasks</a></li>
+                                {% if request.path != "/todo/completed/" %}
+                                    <li class="list-group-item dark-mode-assist-section"><a href="{% url 'todo-completed' %}">Completed tasks</a></li>
+                                {% endif %}
+
                                 <!-- Dark Mode Handling -->
                                 {% if user.profile.has_dark_mode %}
                                     <li class="list-group-item dark-mode-assist-section"><a href="{% url 'todo-darkmode' %}">Disable Dark Mode</a></li>
@@ -109,6 +112,15 @@
                                     {% else %}
                                         <li class="list-group-item dark-mode-assist-section">Sorted by: <b>{{ user.profile.sort_todos_by }}</b><br><a href="{% url 'todo-user-sort' %}">Sort by Date Added?</a></li>
                                     {% endif %}
+                                {% endif %}
+
+                                {% if request.path == "/" %}
+                                    <li class="list-group-item dark-mode-assist-section">Filtered by: <b>all tasks</b><br><a href="#">Filtering system coming soon!</a></li>
+                                {% endif %}
+
+
+                                {% if request.path != "/insights/" %}
+                                    <li class="list-group-item dark-mode-assist-section"><a href="{% url 'insights' %}">Insights</a></li>
                                 {% endif %}
 
                                 {% if request.path != '/' %}

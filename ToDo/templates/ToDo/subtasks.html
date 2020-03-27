@@ -2,12 +2,6 @@
 {% block content %}
 {% load crispy_forms_tags %}
 
-<style>
-    .control-subtask {
-        text-decoration: line-through;
-    }
-</style>
-
 <div class="content section dark-mode-assist-section">
     <h1>{{ todo.title }}</h1>
     <br>
@@ -17,9 +11,21 @@
             {% for subtask in subtasks %}
                 <div class="content-section dark-mode-assist-section">
                     {% if not subtask.done %}
-                        <li style="font-size: 23px;"><a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Check it off</button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.pk %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> </li> 
+                        {% if request.user_agent.is_mobile %}
+                            <li style="font-size: 23px;"><a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a>
+                            <br>
+                            <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" type="button" class="btn btn-outline-success">Check it off</button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.pk %}'" type="submit" class="btn btn-outline-danger">Delete</button> </li>
+                        {% else %}
+                            <li style="font-size: 23px;"><a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Check it off</button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.pk %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> </li>
+                        {% endif %}
                     {% else %}
-                        <li class="control-subtask" style="font-size: 23px;">{{ subtask.title }} <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Uncheck it</button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.pk %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> </li> 
+                        {% if request.user_agent.is_mobile %}
+                            <li style="font-size: 23px;"><a style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a>
+                            <br>
+                            <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" type="button" class="btn btn-outline-success">Uncheck it </button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.pk %}'" type="submit" class="btn btn-outline-danger">Delete</button> </li>
+                        {% else %}
+                            <li style="font-size: 23px;"><a class="control-subtask" style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Uncheck it</button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.pk %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> </li>
+                        {% endif %}
                     {% endif %}
                 </div>
             {% endfor %}
