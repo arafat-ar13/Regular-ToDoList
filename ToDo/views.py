@@ -11,8 +11,6 @@ from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm, Contact
 
 import datetime
 
-from .backend_functions import *
-
 def home(request):
     if request.method == "POST":
         due_form = DueDateForm(request.POST)
@@ -70,10 +68,65 @@ def home(request):
     today = datetime.datetime.now(datetime.timezone.utc)
     todo_objects = ToDo.objects.all()
 
-    calculate_todo_due_date_color(todo_objects, today)
+    for todo in todo_objects:
+        if todo.due_date is not None:
+            if todo.due_date.day == today.day:
+                todo.due_date_color = "blue"
+            elif todo.due_date > today:
+                todo.due_date_color = "green"
+            elif todo.due_date < today:
+                todo.due_date_color = "red"
+
+            todo.save()
+
+    todos = todo_objects
 
     # Handling how the user's tasks should be sorted
-    todos = sorting_ai(request.user, ToDo)
+    if request.user.is_authenticated:
+        user = User.objects.get(username=request.user.username)
+        if user.profile.sort_todos_by == "date_added":
+
+            # The code below handles how the tasks should be filtered when they are sorted by "date_added"
+            if user.profile.filter_todos_by == "important_todos":
+                todos = ToDo.objects.filter(important=True).order_by("-date_posted")
+
+            elif user.profile.filter_todos_by == "due_date_todos":
+                todos = []
+                for todo in ToDo.objects.all():
+                    if todo.due_date is not None:
+                        todos.append(todo)
+
+                todos.reverse()
+
+
+            elif user.profile.filter_todos_by == "all_todos":
+                todos = ToDo.objects.all().order_by("-date_posted")
+
+        elif user.profile.sort_todos_by == "due_date":
+            due_todos = []
+            normal_todos = []
+
+            for todo in ToDo.objects.all().order_by("due_date"):
+                if todo.due_date is not None:
+                    due_todos.append(todo)
+
+            for todo in ToDo.objects.all().order_by("-date_posted"):
+                if todo.due_date is None:
+                    normal_todos.append(todo)
+
+            todos = due_todos + normal_todos
+            filtered_todos = []
+
+            if user.profile.filter_todos_by == "important_todos":
+                for todo in todos:
+                    if todo.important:
+                        filtered_todos.append(todo)
+
+                todos = filtered_todos
+
+            elif user.profile.filter_todos_by == "due_date_todos":
+                todos = due_todos
+
 
     context = {
         "todos": todos,
@@ -117,7 +170,7 @@ def about(request):
             else:
                 username = "Anonymous"
 
-        
+
             user_message += f"\n\nThe following is the user info:\nSent from: {user_email} \nUsername: {username}"
             send_mail(subject=f"{user_choice}", message=user_message, from_email=user_email, recipient_list=["arafat.aak4@gmail.com"])
 
