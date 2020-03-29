@@ -31,6 +31,16 @@
                             {% else %}
                                 <h2><a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a> <button onclick="location.href='{% url 'todo-add-notes' todo.pk %}'" class="btn btn-outline-warning" type="submit">Add notes</button></h2>
                             {% endif %}
+ 
+                            {% if not todo.important %}
+                                <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'" type="submit" class="btn btn-secondary">
+                                    <span aria-hidden="true">Mark Important</span>
+                                </button>
+                            {% else %}
+                                <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'" type="submit" class="btn btn-warning">
+                                    <span aria-hidden="true">Mark Unimportant</span>
+                                </button>
+                            {% endif %}
 
                             {% if todo.num_of_subtasks != 0 %}
                             <!-- Showing the number of subtasks -->

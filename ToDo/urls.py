@@ -11,7 +11,7 @@ urlpatterns = [
     path('', views.home, name="todo-home"),
     path('todo/completed/', TodoCompletedView.as_view(), name="todo-completed"),
     path('todo/darkmode/', views.toggle_dark_mode, name="todo-darkmode"),
-    path('todo/toggle-sort/', views.toggle_user_sort, name="todo-user-sort"),
+    path('todo/toggle_sort/', views.toggle_user_sort, name="todo-user-sort"),
     path('todo/delete/<int:pk>', views.delete, name="todo-delete"),
     path('todo/remove_due/<int:pk>', views.remove_due_date, name="todo-due-remove"),
     path('todo/check/<int:pk>', views.check_todo, name="todo-check"),
@@ -24,4 +24,8 @@ urlpatterns = [
     path('todo/add_notes/<int:pk>', views.add_todo_note, name="todo-add-notes"),
     path('todo/delete_notes/<int:pk>', views.delete_notes, name="todo-delete-notes"),
     path('todo/edit_notes/<int:pk>', ToDoNotesUpdateView.as_view(), name="todo-edit-notes"),
+    path('todo/toggle_important/<int:pk>', views.toggle_important_task, name="todo-toggle-important"),
+    path('todo/filter_by_important', views.filter_by_important, name="todo-filter-important"),
+    path('todo/filter_by_due_dates', views.filter_by_due_dates, name="todo-filter-due-dates"),
+    path('todo/filter_normal', views.filter_normal, name="todo-filter-normal")
 ]

@@ -11,6 +11,7 @@ from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm, Contact
 
 import datetime
 
+from .backend_functions import *
 
 def home(request):
     if request.method == "POST":
@@ -64,47 +65,15 @@ def home(request):
         add_form = NewTaskForm()
         due_form = DueDateForm()
 
-    todos = ToDo.objects.all()
-
 
     # Checking today's date and comparing colors of due dates
     today = datetime.datetime.now(datetime.timezone.utc)
     todo_objects = ToDo.objects.all()
 
-    for todo in todo_objects:
-        if todo.due_date is not None:
-            if todo.due_date.day == today.day:
-                todo.due_date_color = "blue"
-            elif todo.due_date > today:
-                todo.due_date_color = "green"
-            elif todo.due_date < today:
-                todo.due_date_color = "red"
-
-            todo.save()
+    calculate_todo_due_date_color(todo_objects, today)
 
     # Handling how the user's tasks should be sorted
-    if request.user.is_authenticated:
-        user = User.objects.get(username=request.user.username)
-
-        if user.profile.sort_todos_by == "date_added":
-            sorter = "date_posted"
-            todos = ToDo.objects.all().order_by(sorter).reverse()
-        elif user.profile.sort_todos_by == "due_date":
-            sorter = "due_date"
-
-            due_todos = []
-            normal_todos = []
-
-            for todo in ToDo.objects.all().order_by("due_date"):
-                if todo.due_date is not None:
-                    due_todos.append(todo)
-
-            for todo in ToDo.objects.all():
-                if todo.due_date is None:
-                    normal_todos.append(todo)
-
-            normal_todos.reverse()
-            todos = due_todos + normal_todos
+    todos = sorting_ai(request.user, ToDo)
 
     context = {
         "todos": todos,
@@ -220,6 +189,22 @@ def delete_notes(request, pk):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
+def toggle_important_task(request, pk):
+    todo = ToDo.objects.get(pk=pk)
+
+    if todo.important:
+        todo.important = False
+        message = "The task is not important anymore"
+    else:
+        todo.important = True
+        message = "Okay, the task is important. Get working!"
+
+    todo.save()
+
+    messages.success(request, message)
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+
 def toggle_user_sort(request):
     user = User.objects.get(username=request.user.username)
     if user.profile.sort_todos_by == "date_added":
@@ -230,6 +215,37 @@ def toggle_user_sort(request):
     user.save()
 
     messages.success(request, "Your sort order altered")
+
+    return redirect("todo-home")
+
+
+def filter_by_important(request):
+    user = User.objects.get(username=request.user.username)
+
+    user.profile.filter_todos_by = "important_todos"
+    user.save()
+
+    messages.success(request, "You are viewing only important todos")
+
+    return redirect("todo-home")
+
+def filter_by_due_dates(request):
+    user = User.objects.get(username=request.user.username)
+
+    user.profile.filter_todos_by = "due_date_todos"
+    user.save()
+
+    messages.success(request, "You are only viewing tasks with due dates")
+
+    return redirect("todo-home")
+
+def filter_normal(request):
+    user = User.objects.get(username=request.user.username)
+
+    user.profile.filter_todos_by = "all_todos"
+    user.save()
+
+    messages.success(request, "You are viewing all your todos")
 
     return redirect("todo-home")
 
