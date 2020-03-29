@@ -9,6 +9,8 @@ class Profile(models.Model):
     has_dark_mode = models.BooleanField(default=False)
     sort_todos_by = models.CharField(max_length=100, default="date_added")
     total_todos = models.IntegerField(default=0)
+    filter_todos_by = models.CharField(max_length=100, default="all_todos")
+    num_of_important_tasks = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.user.username} Profile"

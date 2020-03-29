@@ -12,6 +12,7 @@ class ToDo(models.Model):
     num_of_subtasks = models.IntegerField(default=0)
     date_completed = models.DateTimeField(null=True, blank=True)
     notes = models.BooleanField(default=False)
+    important = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title

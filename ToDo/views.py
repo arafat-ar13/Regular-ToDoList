@@ -6,7 +6,8 @@ from django.urls import reverse, reverse_lazy
 from users.models import Profile
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm
+from django.core.mail import send_mail
+from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm, ContactMeForm
 
 import datetime
 
@@ -126,7 +127,42 @@ def remove_due_date(request, pk):
 
 
 def about(request):
-    return render(request, "ToDo/about.html")
+    if request.method == "POST":
+        contact_form = ContactMeForm(request.POST)
+
+        if contact_form.is_valid():
+            user_email = contact_form.cleaned_data.get("your_email")
+            user_choice = contact_form.cleaned_data.get("your_question_subject")
+            user_message = contact_form.cleaned_data.get("your_message")
+
+            if request.user.is_authenticated:
+                user = User.objects.get(username=request.user.username)
+                user_real_email = user.email
+                username = user.username
+
+                if user_real_email != user_email:
+
+                    messages.info(request, "Since you are logged in, you must only use your own email address")
+                    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+            else:
+                username = "Anonymous"
+
+        
+            user_message += f"\n\nThe following is the user info:\nSent from: {user_email} \nUsername: {username}"
+            send_mail(subject=f"{user_choice}", message=user_message, from_email=user_email, recipient_list=["arafat.aak4@gmail.com"])
+
+            messages.success(request, "Your support message was sent!")
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+    else:
+        contact_form = ContactMeForm()
+
+    context = {
+        "contact_form": contact_form
+    }
+
+    return render(request, "ToDo/about.html", context=context)
 
 
 def render_insights(request):
