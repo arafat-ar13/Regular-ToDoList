@@ -1,5 +1,73 @@
-{% extends "ToDo/base.html" %}
-{% load crispy_forms_tags %}
+{% extends "ToDo/insights_base.html" %}
 {% block content %}
-    <h>This is probably the biggest feature of the app. Stay tuned!</h>
+
+<style>
+    .stay-tuned {
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+</style>
+
+{% if not ready %}
+    <div class="content-section stay-tuned">
+        <h1>
+            The AI is still learning your behavior. Please continue creating and completing tasks. 
+            This page will be available next Monday
+        </h1>
+
+        <br><br>
+        <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample1" role="button" aria-expanded="false" aria-controls="multiCollapseExample1">What is this page about?</a>
+        <div class="row">
+            <div class="col">
+                <div class="collapse multi-collapse" id="multiCollapseExample1">
+                    <br>
+                    <p1>
+                        This is a special page of this app. This page will be populated with data only once a week.
+                        Insights mean deeper meaning of something. With this page, I have tried to accomplished a system that will
+                        analyze how you are creating and completing your tasks and then process them and show you a beautiful representation of 
+                        that data on this page.
+                        <br><br>
+                        So basically if you are a new user, this page will take about 7 days to learn about you and to collect enough data.
+                        Since a week begins on a Monday, this page will be updated every Monday. After visiting this page on a Monday, the 
+                        contents of this page will not change until the next Monday, but during this period the system will again collect 
+                        data about your behavior and process it so that it can present them to you next Monday.
+                        <br><br>
+                        <p><b>So what is it really that you will be seeing here?</b></p>
+                        Every user will be provided with <a style="color: cornflowerblue">three</a> sorts of insights for now.
+                        <br>
+                        Well, any user, regardless of if they have created any tasks this week or not, will be provided with a basic
+                        insight that is that they will be able to see how many tasks they have created and completed since the day they joined
+                        the app
+                        <br>
+                        Secondly, if the person was productive and created and completed many tasks since the last Monday, then they will also see
+                        how many tasks they have created and how many they have actually completed among those.
+                        <br>
+                        Also, if some of the tasks that you created this week had any due dates, and you completed those tasks within
+                        the due date (congrats btw) then you will also see how many tasks you have completed this week ON TIME!
+                        <br><br>
+                        <b>But what if I created my account on a day that was not a Monday?</b>
+                        <br>
+                        Well this can happen. If a user created their account on a Monday, then it's just miraculously perfect, they
+                        will manage their tasks all week and the system will take 7 days to process data and their Insights Page will 
+                        be available next Monday. But if someone created their account on a day other than Monday then at first the
+                        system will take its usual 7 day period to analyze the user data, then after 7 days, the user will be provided with Insights
+                        on the very next Monday. For example, if someone opened their account on a Friday, then, starting from the upcoming Monday, the 
+                        system will analyze their data and populate the Insights Page on the next Monday. So, the tasks created and completed from that Friday 
+                        till Sunday will NOT be processed by the AI. This is not a bug, this is just how the app is built.
+                        <br>
+                        This is the last feature that I will be developing for this app. Thanks everyone who uses the app.
+                    </p1>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{% else %}
+
+    <h>This week you created: <b style="background-color: blue;">{{ user.profile.todos_created_this_week }}</b> todos</h>
+    <h>And you completed: <b style="background-color: chartreuse;">{{ user.profile.todos_completed_this_week }} of them!!</b></h>
+
+{% endif %}
+
+</html>
+
 {% endblock content %}

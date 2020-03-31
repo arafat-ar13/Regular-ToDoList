@@ -10,6 +10,7 @@ from django.core.mail import send_mail
 from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm, ContactMeForm
 
 import datetime
+import calendar
 
 def home(request):
     if request.method == "POST":
@@ -127,6 +128,13 @@ def home(request):
             elif user.profile.filter_todos_by == "due_date_todos":
                 todos = due_todos
 
+        # Enabling user's Insights Page
+        if (today - user.date_joined).days >= 7:
+            user.profile.insights_enabled = True
+            previous_monday = today - datetime.timedelta(days=today.weekday())
+            user.profile.last_insights_date = previous_monday
+            user.save()
+
 
     context = {
         "todos": todos,
@@ -188,7 +196,57 @@ def about(request):
 
 
 def render_insights(request):
-    return render(request, "ToDo/insights.html")
+    """
+    This is a function that will analyze the user behavior and calculate how well they are managing their tasks
+    """
+    ready = False
+    
+    today = datetime.datetime.now(datetime.timezone.utc)
+    user = User.objects.get(username=request.user.username)
+    user_todos = ToDo.objects.filter(creator=request.user)
+
+    if user.profile.insights_enabled:
+        # We'll determine if a whole week has passed since the user got their previous insights page
+        if (today - user.profile.last_insights_date).days == 7:
+            # First, how many tasks they added this week and how many they actually completed
+            todos_created_this_week = []
+            todos_completed_this_week = []
+
+            for todo in user_todos:
+                if (today - todo.date_posted).days <= 7:
+                    todos_created_this_week.append(todo)
+                    if todo.is_checked:
+                        todos_completed_this_week.append(todo)
+
+            user.profile.todos_created_this_week = len(todos_created_this_week)
+            user.profile.todos_completed_this_week = len(todos_completed_this_week)
+        
+            # Second, how many tasks they added this week and completed ON TIME (by due date), IF their tasks had at least one due date
+            todos_with_due_dates = [todo for todo in todos_completed_this_week if todo.due_date is not None]
+            if todos_with_due_dates:
+                todos_completed_on_time = []
+                for todo in todos_with_due_dates:
+                    if todo.date_completed < todo.due_date:
+                        todos_completed_on_time.append(todo)
+
+                user.profile.todos_completed_on_time = len(todos_completed_on_time)
+
+            else:
+                user.profile.todos_completed_on_time = 0
+
+            user.profile.last_insights_date = today
+            user.save()
+
+            ready = True
+
+        else:
+            ready = False
+                    
+    context = {
+        "ready": ready
+    }
+
+    return render(request, "ToDo/insights.html", context=context)
 
 
 def add_todo_note(request, pk):

@@ -11,6 +11,12 @@ class Profile(models.Model):
     total_todos = models.IntegerField(default=0)
     filter_todos_by = models.CharField(max_length=100, default="all_todos")
     num_of_important_tasks = models.IntegerField(default=0)
+    # The attributes below are used by the Insights Page to analyze the user
+    insights_enabled = models.BooleanField(default=False)
+    last_insights_date = models.DateTimeField(null=True, blank=True)
+    todos_created_this_week = models.IntegerField(default=0)
+    todos_completed_this_week = models.IntegerField(default=0)
+    todos_completed_on_time = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.user.username} Profile"
