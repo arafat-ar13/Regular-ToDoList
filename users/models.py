@@ -17,6 +17,10 @@ class Profile(models.Model):
     todos_created_this_week = models.IntegerField(default=0)
     todos_completed_this_week = models.IntegerField(default=0)
     todos_completed_on_time = models.IntegerField(default=0)
+    generated_insights_this_week = models.BooleanField(default=False)
+    efficiency_this_week = models.IntegerField(default=0)
+    efficiency_change = models.IntegerField(default=0)
+    efficiency_change_type = models.CharField(max_length=100, default="NOT_PROVIDED")
 
     def __str__(self):
         return f"{self.user.username} Profile"

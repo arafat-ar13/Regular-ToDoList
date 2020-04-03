@@ -6,6 +6,7 @@ from django.urls import reverse, reverse_lazy
 from users.models import Profile
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm, ContactMeForm
 
@@ -129,11 +130,18 @@ def home(request):
                 todos = due_todos
 
         # Enabling user's Insights Page
-        if (today - user.date_joined).days >= 7:
-            user.profile.insights_enabled = True
-            previous_monday = today - datetime.timedelta(days=today.weekday())
-            user.profile.last_insights_date = previous_monday
-            user.save()
+        if not user.profile.insights_enabled:
+            if (today - user.date_joined).days >= 7:
+                user.profile.insights_enabled = True
+                previous_monday = today - datetime.timedelta(days=today.weekday())
+                user.profile.last_insights_date = previous_monday
+                user.save()
+
+        # Allowing users to have their Insights Page this week if they haven't already
+        if user.profile.insights_enabled:
+            if (today - user.profile.last_insights_date).days >= 7:
+                user.profile.generated_insights_this_week = False
+                user.save()
 
 
     context = {
@@ -163,6 +171,14 @@ def about(request):
         if contact_form.is_valid():
             user_email = contact_form.cleaned_data.get("your_email")
             user_choice = contact_form.cleaned_data.get("your_question_subject")
+            choice_options = {
+                "0": "Choose one",
+                "1": "Account deletion",
+                "2": "Feature request",
+                "3": "Contribute",
+                "4": "Say thanks"
+            }
+            user_choice = choice_options[user_choice]
             user_message = contact_form.cleaned_data.get("your_message")
 
             if request.user.is_authenticated:
@@ -180,7 +196,7 @@ def about(request):
 
 
             user_message += f"\n\nThe following is the user info:\nSent from: {user_email} \nUsername: {username}"
-            send_mail(subject=f"{user_choice}", message=user_message, from_email=user_email, recipient_list=["arafat.aak4@gmail.com"])
+            send_mail(subject=f"{user_choice}", message=user_message, from_email=user_email, recipient_list=["arafat33k@outlook.com"])
 
             messages.success(request, "Your support message was sent!")
             return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
@@ -195,11 +211,11 @@ def about(request):
     return render(request, "ToDo/about.html", context=context)
 
 
+@login_required
 def render_insights(request):
     """
     This is a function that will analyze the user behavior and calculate how well they are managing their tasks
     """
-    ready = False
     
     today = datetime.datetime.now(datetime.timezone.utc)
     user = User.objects.get(username=request.user.username)
@@ -207,20 +223,53 @@ def render_insights(request):
 
     if user.profile.insights_enabled:
         # We'll determine if a whole week has passed since the user got their previous insights page
-        if (today - user.profile.last_insights_date).days == 7:
+        if (today - user.profile.last_insights_date).days >= 7 and not user.profile.generated_insights_this_week:
             # First, how many tasks they added this week and how many they actually completed
             todos_created_this_week = []
             todos_completed_this_week = []
 
             for todo in user_todos:
-                if (today - todo.date_posted).days <= 7:
+                # The user can visit the Insights Page even after Monday, so we need to make sure that the function works as planned
+                if calendar.day_name[today.weekday()] == "Monday":
+                    date_ranger = today
+                else:
+                    # If today is not a Monday (that means that the user has visited the place after Monday), we'll analyze todos till the last Monday
+                    date_ranger = today - datetime.timedelta(days=today.weekday())
+
+                if (date_ranger - todo.date_posted).days <= 7:
                     todos_created_this_week.append(todo)
                     if todo.is_checked:
                         todos_completed_this_week.append(todo)
 
             user.profile.todos_created_this_week = len(todos_created_this_week)
             user.profile.todos_completed_this_week = len(todos_completed_this_week)
-        
+            user.save()
+
+            # Calculating user efficiency this week and if possible comparing with last week's
+            efficiency_change = False
+            if user.profile.efficiency_this_week != 0:
+                # If we access user efficiency now, it'll still be the efficiency of last week's because we didn't modify it yet
+                efficiency_last_week = user.profile.efficiency_this_week
+                efficiency_change = True
+
+            user.profile.efficiency_this_week = int((user.profile.todos_completed_this_week / user.profile.todos_created_this_week) * 100)
+            user.save()
+
+            # So if an efficiency change exists, we'll see if this is an improvement or not
+            if efficiency_change:
+                if user.profile.efficiency_this_week > efficiency_last_week:
+                    efficiency = ("Positive", user.profile.efficiency_this_week - efficiency_last_week)
+
+                elif user.profile.efficiency_this_week == efficiency_last_week:
+                    efficiency = ("Same", None)
+
+                else:
+                    efficiency = ("Negative", efficiency_last_week - user.profile.efficiency_this_week)
+
+                user.profile.efficiency_change = efficiency[1]
+                user.profile.efficiency_change_type = efficiency[0]
+                user.save()
+
             # Second, how many tasks they added this week and completed ON TIME (by due date), IF their tasks had at least one due date
             todos_with_due_dates = [todo for todo in todos_completed_this_week if todo.due_date is not None]
             if todos_with_due_dates:
@@ -234,16 +283,20 @@ def render_insights(request):
             else:
                 user.profile.todos_completed_on_time = 0
 
-            user.profile.last_insights_date = today
+            user.profile.last_insights_date = date_ranger
+            user.profile.generated_insights_this_week = True
             user.save()
 
-            ready = True
+            ready = "show content"
 
         else:
-            ready = False
+            ready = "show content"
+
+    else:
+        ready = "AI is still learning"
                     
     context = {
-        "ready": ready
+        "ready": ready,
     }
 
     return render(request, "ToDo/insights.html", context=context)
