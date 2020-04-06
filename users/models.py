@@ -13,7 +13,7 @@ class Profile(models.Model):
     num_of_important_tasks = models.IntegerField(default=0)
     # The attributes below are used by the Insights Page to analyze the user
     insights_enabled = models.BooleanField(default=False)
-    last_insights_date = models.DateTimeField(null=True, blank=True)
+    last_insights_date = models.DateField(blank=True, null=True)
     todos_created_this_week = models.IntegerField(default=0)
     todos_completed_this_week = models.IntegerField(default=0)
     todos_completed_on_time = models.IntegerField(default=0)

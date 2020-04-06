@@ -218,6 +218,13 @@ def about(request):
 def render_insights(request):
     """
     This is a function that will analyze the user behavior and calculate how well they are managing their tasks
+    In this function, we are going to convert all the DateTime objects to Date objects just for the sake for
+    better comparision.
+    Although DateTime objects offer better precision as they also have time but for this function to properly analyze how many
+    tasks are being created and completed, just comparing the dates is more precise since DateTime objects will not show a whole new
+    day unless the hour of the day matches too. For this function, it must be called as soon as it is Monday and it's past 7 days
+    since the user's previous insights date. Also, todos created and completed on the last minute will also be considered by the AI
+    if we use only dates.
     """
 
     today = datetime.datetime.now(datetime.timezone.utc)
