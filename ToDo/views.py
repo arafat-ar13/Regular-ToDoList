@@ -192,7 +192,10 @@ def about(request):
                     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
             else:
-                username = "Anonymous"
+                try:
+                    username = User.objects.get(email=user_email).username + " (not logged in)"
+                except:
+                    username = "Anonymous"
 
 
             user_message += f"\n\nThe following is the user info:\nSent from: {user_email} \nUsername: {username}"
@@ -216,7 +219,7 @@ def render_insights(request):
     """
     This is a function that will analyze the user behavior and calculate how well they are managing their tasks
     """
-    
+
     today = datetime.datetime.now(datetime.timezone.utc)
     user = User.objects.get(username=request.user.username)
     user_todos = ToDo.objects.filter(creator=request.user)
@@ -275,7 +278,7 @@ def render_insights(request):
             if todos_with_due_dates:
                 todos_completed_on_time = []
                 for todo in todos_with_due_dates:
-                    if todo.date_completed < todo.due_date:
+                    if todo.date_completed <= todo.due_date:
                         todos_completed_on_time.append(todo)
 
                 user.profile.todos_completed_on_time = len(todos_completed_on_time)
@@ -294,7 +297,7 @@ def render_insights(request):
 
     else:
         ready = "AI is still learning"
-                    
+
     context = {
         "ready": ready,
     }
