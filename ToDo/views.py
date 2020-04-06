@@ -139,7 +139,7 @@ def home(request):
 
         # Allowing users to have their Insights Page this week if they haven't already
         if user.profile.insights_enabled:
-            if (today - user.profile.last_insights_date).days >= 7:
+            if (today.date() - user.profile.last_insights_date).days >= 7:
                 user.profile.generated_insights_this_week = False
                 user.save()
 
@@ -208,7 +208,8 @@ def about(request):
         contact_form = ContactMeForm()
 
     context = {
-        "contact_form": contact_form
+        "contact_form": contact_form,
+        "title": "About the App"
     }
 
     return render(request, "ToDo/about.html", context=context)
@@ -233,7 +234,7 @@ def render_insights(request):
 
     if user.profile.insights_enabled:
         # We'll determine if a whole week has passed since the user got their previous insights page
-        if (today - user.profile.last_insights_date).days >= 7 and not user.profile.generated_insights_this_week:
+        if (today.date() - user.profile.last_insights_date).days >= 7 and not user.profile.generated_insights_this_week:
             # First, how many tasks they added this week and how many they actually completed
             todos_created_this_week = []
             todos_completed_this_week = []
@@ -241,12 +242,12 @@ def render_insights(request):
             for todo in user_todos:
                 # The user can visit the Insights Page even after Monday, so we need to make sure that the function works as planned
                 if calendar.day_name[today.weekday()] == "Monday":
-                    date_ranger = today
+                    date_ranger = today.date()
                 else:
                     # If today is not a Monday (that means that the user has visited the place after Monday), we'll analyze todos till the last Monday
-                    date_ranger = today - datetime.timedelta(days=today.weekday())
+                    date_ranger = (today - datetime.timedelta(days=today.weekday())).date()
 
-                if (date_ranger - todo.date_posted).days <= 7:
+                if (date_ranger - todo.date_posted.date()).days <= 7:
                     todos_created_this_week.append(todo)
                     if todo.is_checked:
                         todos_completed_this_week.append(todo)
@@ -285,7 +286,7 @@ def render_insights(request):
             if todos_with_due_dates:
                 todos_completed_on_time = []
                 for todo in todos_with_due_dates:
-                    if todo.date_completed <= todo.due_date:
+                    if todo.date_completed.date() <= todo.due_date.date():
                         todos_completed_on_time.append(todo)
 
                 user.profile.todos_completed_on_time = len(todos_completed_on_time)
@@ -307,6 +308,7 @@ def render_insights(request):
 
     context = {
         "ready": ready,
+        "title": "Insights"
     }
 
     return render(request, "ToDo/insights.html", context=context)

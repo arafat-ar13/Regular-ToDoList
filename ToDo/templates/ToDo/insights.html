@@ -15,6 +15,10 @@
         font-size: 7ch;
         color: magenta;
     }
+
+    .full-content {
+        width: 100%;
+    }
 </style>
 
 <!-- Simple JS function to perform basic arithmetic -->
@@ -86,71 +90,71 @@
 
 {% elif ready == "show content" %}
 
-    <div class="content-section dark-mode-assist-section">
-        <center>
-            <h1>Since the day you became a user of this app, you created: <br><b class="important-num-major">{{ user.profile.total_todos }}</b> todos</h1>
-            <h1>And you completed: <span id="js-caller" class="important-num-minor"><script>subtract({{ user.profile.total_todos }}, {{ user.profile.todos }})</script></span> of them! Wow!</h1>
-        </center>
-        <small>Tip: This insight will update every time you complete or create tasks</small>
-    </div>    
-
-    <br><br>
-
-    {% if user.profile.todos_created_this_week != 0 %}
+    <div class="full-content">
         <div class="content-section dark-mode-assist-section">
             <center>
-                <h1>This week you created: <br><b class="important-num-major">{{ user.profile.todos_created_this_week }}</b> todos</h1>
-                <h1>And you completed: <b class="important-num-minor">{{ user.profile.todos_completed_this_week }}</b> of them!!</h1>
-
-                <br>
-                <h3>
-                    By analyzing you, the AI has said that you 
-                    were about <br><b class="important-num-major">{{ user.profile.efficiency_this_week }}%</b><br> efficient this week
-                </h3>
-                <br>
-                {% if user.profile.efficiency_change != 0 %}
-                    {% if user.profile.efficiency_change_type == "Positive" %}
-                        <h3>Congrats! You were more efficient this week than last week. Up by {{ user.profile.efficiency_change }}%</h3>
-                    
-                    {% elif user.profile.efficiency_change_type == "Negative" %}
-                        <h3>Dang! Last week was more efficient than this week. Try harder! Down by {{ user.profile.efficiency_change }}%</h3>
-                    
-                    {% elif user.profile.efficiency_change_type == "Same" %}
-                        <h3>You were as efficient this week as you were last week. Keep it up!</h3>
-
-                    {% endif %}
-                {% endif %}
+                <h1>Since the day you became a user of this app, you created: <br><b class="important-num-major">{{ user.profile.total_todos }}</b> todos</h1>
+                <h1>And you completed: <span id="js-caller" class="important-num-minor"><script>subtract({{ user.profile.total_todos }}, {{ user.profile.todos }})</script></span> of them! Wow!</h1>
             </center>
-        </div>
-    {% endif %}
+            <small>Tip: This insight will update every time you complete or create tasks</small>
+        </div>    
 
-    <br><br>
-    {% if user.profile.todos_completed_on_time != 0 %}
-        <div class="content-section dark-mode-assist-section">
-            <center>
-                <h1>This week you completed <br><b class="important-num-major">{{ user.profile.todos_completed_on_time }}</b><br> todos just on time! Yay!</h1>
-            </center>
-        </div>
-    {% endif %}
+        {% if user.profile.todos_created_this_week != 0 %}
+            <div class="content-section dark-mode-assist-section">
+                <center>
+                    <h1>This week you created: <br><b class="important-num-major">{{ user.profile.todos_created_this_week }}</b> todos</h1>
+                    <h1>And you completed: <b class="important-num-minor">{{ user.profile.todos_completed_this_week }}</b> of them!!</h1>
 
-    <br><br>
-    {% if user.profile.todos_created_this_week == 0 or user.profile.todos_completed_on_time == 0 %}
-        <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample2" role="button" aria-expanded="false" aria-controls="multiCollapseExample2">You are seeing less data than you should. Find out more here</a>
-        <div class="row">
-            <div class="col">
-                <div class="collapse multi-collapse" id="multiCollapseExample2">
                     <br>
-                    <div class="card card-body dark-mode-assist-section">
-                        <h3 class="text-muted">
-                            You are seeing less Insights than you should. Probably today is not Monday. If such is the case, check next Monday
-                            for some more fresh data. Or maybe today is Monday but you were not so productive last week. Don't worry, be more
-                            productive this week and we'll surely give you more Insights next Monday :)
-                        </h3>
+                    <h3>
+                        By analyzing you, the AI has said that you 
+                        were about <br><b class="important-num-major">{{ user.profile.efficiency_this_week }}%</b><br> efficient this week
+                    </h3>
+                    <br>
+                    {% if user.profile.efficiency_change != 0 %}
+                        {% if user.profile.efficiency_change_type == "Positive" %}
+                            <h3>Congrats! You were more efficient this week than last week. Up by {{ user.profile.efficiency_change }}%</h3>
+                        
+                        {% elif user.profile.efficiency_change_type == "Negative" %}
+                            <h3>Dang! Last week was more efficient than this week. Try harder! Down by {{ user.profile.efficiency_change }}%</h3>
+                        
+                        {% elif user.profile.efficiency_change_type == "Same" %}
+                            <h3>You were as efficient this week as you were last week. Keep it up!</h3>
+
+                        {% endif %}
+                    {% endif %}
+                </center>
+            </div>
+        {% endif %}
+
+        <br>
+        {% if user.profile.todos_completed_on_time != 0 %}
+            <div class="content-section dark-mode-assist-section">
+                <center>
+                    <h1>This week you completed <br><b class="important-num-major">{{ user.profile.todos_completed_on_time }}</b><br> todos just on time! Yay!</h1>
+                </center>
+            </div>
+        {% endif %}
+
+        <br>
+        {% if user.profile.todos_created_this_week == 0 or user.profile.todos_completed_on_time == 0 %}
+            <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample2" role="button" aria-expanded="false" aria-controls="multiCollapseExample2">You are seeing less data than you should. Find out more here</a>
+            <div class="row">
+                <div class="col">
+                    <div class="collapse multi-collapse" id="multiCollapseExample2">
+                        <br>
+                        <div class="card card-body dark-mode-assist-section">
+                            <h3 class="text-muted">
+                                You are seeing less Insights than you should. Probably today is not Monday. If such is the case, check next Monday
+                                for some more fresh data. Or maybe today is Monday but you were not so productive last week. Don't worry, be more
+                                productive this week and we'll surely give you more Insights next Monday :)
+                            </h3>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    {% endif %}
+        {% endif %}
+    </div>
 
 {% endif %}
 
