@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '8&r*)sv64&pi1kb%6bqt!kd8ow%m2y&vemadw4jxcj5dc#!4fw'
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -139,5 +139,5 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "regtodo.team@gmail.com"
-EMAIL_HOST_PASSWORD = "sP3s7W@Avjy3W%lm!kXw"
+EMAIL_HOST_USER = os.getenv("TODO_EMAIL_USER")
+EMAIL_HOST_PASSWORD = os.getenv("TODO_EMAIL_PASSWORD")
