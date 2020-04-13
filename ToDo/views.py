@@ -131,10 +131,10 @@ def home(request):
 
         # Enabling user's Insights Page
         if not user.profile.insights_enabled:
-            if (today - user.date_joined).days >= 7:
+            if (today.date() - user.date_joined.date()).days >= 7:
                 user.profile.insights_enabled = True
-                previous_monday = today - datetime.timedelta(days=today.weekday())
-                user.profile.last_insights_date = previous_monday
+                previous_monday = (today - datetime.timedelta(days=today.weekday())) - datetime.timedelta(days=7)
+                user.profile.last_insights_date = previous_monday.date()
                 user.save()
 
         # Allowing users to have their Insights Page this week if they haven't already
@@ -232,6 +232,20 @@ def render_insights(request):
     user = User.objects.get(username=request.user.username)
     user_todos = ToDo.objects.filter(creator=request.user)
 
+    # Creating a ordinal indicator function
+    def determine_ordinal(date):
+        if date >= 4 and date <= 20:
+            ordinal = "th"
+        elif date == 1 or (date % 10) == 1:
+            ordinal = "st"
+        elif date == 2 or (date % 10) == 2:
+            ordinal = "nd"
+        elif date == 3 or (date % 10) == 3:
+            ordinal = "rd"
+
+        num_with_ordinal = str(date) + ordinal
+        return num_with_ordinal
+
     if user.profile.insights_enabled:
         # We'll determine if a whole week has passed since the user got their previous insights page
         if (today.date() - user.profile.last_insights_date).days >= 7 and not user.profile.generated_insights_this_week:
@@ -263,7 +277,10 @@ def render_insights(request):
                 efficiency_last_week = user.profile.efficiency_this_week
                 efficiency_change = True
 
-            user.profile.efficiency_this_week = int((user.profile.todos_completed_this_week / user.profile.todos_created_this_week) * 100)
+            try:
+                user.profile.efficiency_this_week = int((user.profile.todos_completed_this_week / user.profile.todos_created_this_week) * 100)
+            except ZeroDivisionError:
+                user.profile.efficiency_this_week = 0
             user.save()
 
             # So if an efficiency change exists, we'll see if this is an improvement or not
@@ -294,6 +311,15 @@ def render_insights(request):
             else:
                 user.profile.todos_completed_on_time = 0
 
+            # We also want to calculate how many tasks they completed this week that they created long before this week
+            todos_completed_but_created_long_ago = []
+            for todo in user_todos:
+                if todo.date_completed is not None:
+                    if (date_ranger - todo.date_completed.date()).days <= 7 and todo not in todos_created_this_week:
+                        todos_completed_but_created_long_ago.append(todo)
+
+            user.profile.todos_completed_created_long_ago = len(todos_completed_but_created_long_ago)
+
             user.profile.last_insights_date = date_ranger
             user.profile.generated_insights_this_week = True
             user.save()
@@ -303,12 +329,19 @@ def render_insights(request):
         else:
             ready = "show content"
 
+        week_range = f"""
+        This is your data from {determine_ordinal((user.profile.last_insights_date-datetime.timedelta(days=7)).day)}
+        {calendar.month_name[(user.profile.last_insights_date-datetime.timedelta(days=7)).month]} till
+        {determine_ordinal(user.profile.last_insights_date.day)} {calendar.month_name[user.profile.last_insights_date.month]}
+        """
+
     else:
         ready = "AI is still learning"
 
     context = {
         "ready": ready,
-        "title": "Insights"
+        "title": "Insights",
+        "week_range": week_range
     }
 
     return render(request, "ToDo/insights.html", context=context)

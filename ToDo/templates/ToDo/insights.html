@@ -6,10 +6,17 @@
         font-family: Georgia, 'Times New Roman', Times, serif;
     }
 
-    .important-num-major {
-        font-size: 15ch;
-        color: darkcyan
-    }
+    {% if request.user_agent.is_mobile %}
+        .important-num-major {
+            font-size: 10ch;
+            color: darkcyan
+        }
+    {% else %}
+        .important-num-major {
+            font-size: 15ch;
+            color: darkcyan
+        }
+    {% endif %}
 
     .important-num-minor {
         font-size: 7ch;
@@ -24,9 +31,9 @@
 <!-- Simple JS function to perform basic arithmetic -->
 <script>
 
-    function subtract(val1, val2) {
+    function subtract(val1, val2, htmlElementId) {
         let ans = val1 - val2
-        document.getElementById("js-caller").innerHTML = ans;
+        document.getElementById(htmlElementId).innerHTML = ans;
     }
 
 </script>
@@ -35,8 +42,8 @@
 {% if ready == "AI is still learning" %}
     <div class="content-section stay-tuned dark-mode-assist-section">
         <h1>
-            The AI is still learning your behavior. Please continue creating and completing tasks. 
-            Since you are a new member, please allow 7 days for the system for analyze you. After 7 days 
+            The AI is still learning your behavior. Please continue creating and completing tasks.
+            Since you are a new member, please allow 7 days for the system to analyze you. After 7 days
             from the day you joined, visit this page again.
         </h1>
 
@@ -49,12 +56,12 @@
                     <p1>
                         This is a special page of this app. This page will be populated with data only once a week.
                         Insights mean deeper meaning of something. With this page, I have tried to accomplished a system that will
-                        analyze how you are creating and completing your tasks and then process them and show you a beautiful representation of 
+                        analyze how you are creating and completing your tasks and then process them and show you a beautiful representation of
                         that data on this page.
                         <br><br>
                         So basically if you are a new user, this page will take about 7 days to learn about you and to collect enough data.
-                        Since a week begins on a Monday, this page will be updated every Monday. After visiting this page on a Monday, the 
-                        contents of this page will not change until the next Monday, but during this period the system will again collect 
+                        Since a week begins on a Monday, this page will be updated every Monday. After visiting this page on a Monday, the
+                        contents of this page will not change until the next Monday, but during this period the system will again collect
                         data about your behavior and process it so that it can present them to you next Monday.
                         <br><br>
                         <p><b>So what is it really that you will be seeing here?</b></p>
@@ -73,12 +80,17 @@
                         <b>But what if I created my account on a day that was not a Monday?</b>
                         <br>
                         Well this can happen. If a user created their account on a Monday, then it's just miraculously perfect, they
-                        will manage their tasks all week and the system will take 7 days to process data and their Insights Page will 
-                        be available next Monday. But if someone created their account on a day other than Monday then at first the
-                        system will take its usual 7 day period to analyze the user data, then after 7 days, the user will be provided with Insights
-                        on the very next Monday. For example, if someone opened their account on a Friday, then, starting from the upcoming Monday, the 
-                        system will analyze their data and populate the Insights Page on the next Monday. So, the tasks created and completed from that Friday 
-                        till Sunday will NOT be processed by the AI. This is not a bug, this is just how the app is built.
+                        will manage their tasks all week and the system will take 7 days to process data and their Insights Page will
+                        be available next Monday. But if someone created their account on a day that was not a Monday, then a special request
+                        will be made and the Insights will be generated instantly after 7 days from the creation date though with LESS data.
+                        What I mean is, if someone created their account on a Wednesday, then on the next Wednesday they will see Insights about
+                        their behavior till the previous Monday. Let's say 13th is a Wednesday and someone created their account and 20th is the next Wednesday. So on 20th, the user
+                        will see data that they created FROM 11th (a Monday, yes your todos for those two days will be zero) UPTO 18th
+                        which is a Monday. So actually the tasks created since 13th UPTO 18th will be analyzed and generated on 20th.
+                        Keep in mind 20th is not a Monday but still the data is being generated, that's why this is a special request.
+                        So 20th is a Wednesday, what now? Now, on the next Monday which is 25th, the user will get new generated data as usual. This time
+                        they will see data FROM 18th UPTO 25th. Hope you get the idea. If you don't, dont fuss about it. Keep doing what you are doing
+                        and visit this page every Monday if possible and you shall see some interesting numbers.
                         <br>
                         This is the last feature that I will be developing for this app. Thanks everyone who uses the app.
                     </p1>
@@ -91,13 +103,19 @@
 {% elif ready == "show content" %}
 
     <div class="full-content">
+        <div>
+            <center><h1 style="font-size:8ch; color:orange; font-family:Consolas">{{ week_range }}</h1></center>
+        </div>
+        <br><br><br>
         <div class="content-section dark-mode-assist-section">
             <center>
                 <h1>Since the day you became a user of this app, you created: <br><b class="important-num-major">{{ user.profile.total_todos }}</b> todos</h1>
-                <h1>And you completed: <span id="js-caller" class="important-num-minor"><script>subtract({{ user.profile.total_todos }}, {{ user.profile.todos }})</script></span> of them! Wow!</h1>
+                <h1>And you completed: <span id="js-caller" class="important-num-minor"><script>subtract({{ user.profile.total_todos }}, {{ user.profile.todos }}, "js-caller")</script></span> of them! Wow!</h1>
             </center>
-            <small>Tip: This insight will update every time you complete or create tasks</small>
-        </div>    
+            <small style="color: green;">Tip: This insight will update every time you complete or create tasks</small>
+            <br>
+            <small style="color: red;">Tip: If you are inactivate in using the app, your data on this page may be affected in a bad way</small>
+        </div>
 
         {% if user.profile.todos_created_this_week != 0 %}
             <div class="content-section dark-mode-assist-section">
@@ -107,17 +125,17 @@
 
                     <br>
                     <h3>
-                        By analyzing you, the AI has said that you 
+                        By analyzing you, the AI has said that you
                         were about <br><b class="important-num-major">{{ user.profile.efficiency_this_week }}%</b><br> efficient this week
                     </h3>
                     <br>
                     {% if user.profile.efficiency_change != 0 %}
                         {% if user.profile.efficiency_change_type == "Positive" %}
                             <h3>Congrats! You were more efficient this week than last week. Up by {{ user.profile.efficiency_change }}%</h3>
-                        
+
                         {% elif user.profile.efficiency_change_type == "Negative" %}
                             <h3>Dang! Last week was more efficient than this week. Try harder! Down by {{ user.profile.efficiency_change }}%</h3>
-                        
+
                         {% elif user.profile.efficiency_change_type == "Same" %}
                             <h3>You were as efficient this week as you were last week. Keep it up!</h3>
 
@@ -136,9 +154,20 @@
             </div>
         {% endif %}
 
+        {% if user.profile.todos_completed_created_long_ago != 0 %}
+            <div class="content-section dark-mode-assist-section">
+                <center>
+                    <h1>
+                        This week you completed <br><b class="important-num-major">{{ user.profile.todos_completed_created_long_ago }}</b><br>
+                        todos that you created long before but couldn't find time to complete but this week you did! Awesome!!
+                    </h1>
+                </center>
+            </div>
+        {% endif %}
+
         <br>
-        {% if user.profile.todos_created_this_week == 0 or user.profile.todos_completed_on_time == 0 %}
-            <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample2" role="button" aria-expanded="false" aria-controls="multiCollapseExample2">You are seeing less data than you should. Find out more here</a>
+        {% if user.profile.todos_created_this_week == 0 or user.profile.todos_completed_on_time == 0 or user.profile.todos_completed_created_long_ago == 0%}
+            <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample2" role="button" aria-expanded="false" aria-controls="multiCollapseExample2">You are seeing less data than you should.<br>Find out more here</a>
             <div class="row">
                 <div class="col">
                     <div class="collapse multi-collapse" id="multiCollapseExample2">

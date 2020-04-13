@@ -31,7 +31,7 @@
                             {% else %}
                                 <h2><a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a> <button onclick="location.href='{% url 'todo-add-notes' todo.pk %}'" class="btn btn-outline-warning" type="submit">Add notes</button></h2>
                             {% endif %}
- 
+
                             {% if not todo.important %}
                                 <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'" type="submit" class="btn btn-secondary">
                                     <span aria-hidden="true">Mark Important</span>
@@ -78,7 +78,7 @@
                             {% if todo.num_of_subtasks == 0 %}
                                 <button onclick="location.href='{% url 'todo-add-subtask' todo.pk %}'" class="btn btn-outline-info" type="submit">Add Sub Tasks</button>
                             {% endif %}
-                            
+
                             <!-- Due Date button -->
                             {% if todo.due_date == None %}
                                 <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample{{ todo.pk }}" role="button" aria-expanded="false" aria-controls="multiCollapseExample{{ todo.pk }}">Add Due Date</a>
