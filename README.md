@@ -1,17 +1,26 @@
 # Welcome to my ToDo List app: Regular ToDoList!!
 
 This is a todolist web app created using Django. This app is live and hosted for free by PythonAnywhere.
-The app is being continuously developed by me and I am working hard to bring new features.
+The app has been solely developed by me (though with some CSS files from external sources).
 
 ![A demo image of the ToDo App Home Page](/media/todo_app_demo.png)
 
 
+## Dependencies
+The app uses these dependencies and packages:
+* Django
+* [Django Crispy Forms](https://github.com/django-crispy-forms/django-crispy-forms)
+* [Django User Agents](https://github.com/selwin/django-user_agents)
+* Pillow (Python Imaging Library)
+* SQLite for database
+
+Production Dependencies on PythonAnywhere:
+* [python-dotenv](https://github.com/theskumar/python-dotenv)
+
+
 ## Latest updates
 
-* Ability for users to reset their password if they have forgotten it or if they feel like it.
-* Mark certain ToDos important in the latest version of the app!
-* Filter system is now live! Filter your tasks by: all tasks or tasks with due dates or tasks that are important
-* A new Contact Me form is now available in the About Me page. Contact me for anything related to the app.
+* A brand new Insights page is now available for all users. It is a powerful feature of the app that will analyze user behavior and give insights data.
 
 
 ## Features
@@ -27,8 +36,7 @@ The app is being continuously developed by me and I am working hard to bring new
 * Dark Mode is a very popular feature these days, so I just had to implement it!
 * Sort your todos by date created or by due dates.
 * Introducing Sub Tasks! Break up your big task into smaller tasks and accomplish them in style!
-
-## Work that needs to be done
-
-* Add ability for users to reset their passwords
-* Add a new insights page they users can see a beautiful graph of how they are completing their tasks. Should be done using Matplotlib.
+* Ability for users to reset their password if they have forgotten it or if they feel like it.
+* Mark certain ToDos important in the latest version of the app!
+* Filter system is now live! Filter your tasks by: all tasks or tasks with due dates or tasks that are important
+* A new Contact Me form is now available in the About Me page. Contact me for anything related to the app.
