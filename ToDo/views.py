@@ -234,7 +234,7 @@ def render_insights(request):
 
     # Creating a ordinal indicator function
     def determine_ordinal(date):
-        if date >= 4 and date <= 20:
+        if (date >= 4 and date <= 20) or (date >= 24 and date <= 30):
             ordinal = "th"
         elif date == 1 or (date % 10) == 1:
             ordinal = "st"
@@ -520,6 +520,12 @@ def uncheck_todo(request, pk):
 def add_subtask(request, pk):
     todo = ToDo.objects.get(pk=pk)
     subtasks = SubTask.objects.filter(parent_task=todo.title)
+
+    # Making sure that the current user cannot add subtask to someone else's task
+    user = User.objects.get(username=request.user.username)
+    if todo.creator != user:
+        messages.info(request, "Hold up! You cannot see that")
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
     if request.method == "POST":
         subtask_form = SubTaskForm(request.POST)
