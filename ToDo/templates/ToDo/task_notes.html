@@ -11,7 +11,7 @@
             <h3>
                 <div style="font-family:Candara">{{ note.content|linebreaks }}</div>
                 <br>
-                <button class="btn btn-outline-danger" type="submit" onclick="location.href='{% url 'todo-delete-notes' note.pk %}'">Delete notes</button>
+                <button class="btn btn-outline-danger" type="submit" onclick="location.href='{% url 'todo-delete-notes' note.content %}'">Delete notes</button>
                 <button class="btn btn-outline-info" type="submit" onclick="location.href='{% url 'todo-edit-notes' note.pk %}'">Edit notes</button>
             </h3>
             <p>

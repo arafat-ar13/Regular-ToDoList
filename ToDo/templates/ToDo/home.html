@@ -2,156 +2,180 @@
 {% block content %}
 {% load crispy_forms_tags %}
 {% load user_agents %}
-    {% if user.is_authenticated %}
-        <div class="content section">
-            <form method="POST" name="add_form">
-                {% csrf_token %}
-                <fieldset class="form-group dark-mode-assist">
-                    <legend class="border-bottom mb-4">New ToDo!</legend>
-                    {{ add_form|crispy }}
-                    <div class="form-group">
-                        <button class="btn btn-outline-info" type="submit" name="add-task">Add</button>
+{% if user.is_authenticated %}
+<div class="content section">
+    <form method="POST" name="add_form">
+        {% csrf_token %}
+        <fieldset class="form-group dark-mode-assist">
+            <legend class="border-bottom mb-4">New ToDo!</legend>
+            {{ add_form|crispy }}
+            <div class="form-group">
+                <button class="btn btn-outline-info" type="submit" name="add-task">Add</button>
+            </div>
+        </fieldset>
+    </form>
+</div>
+
+{% if user.profile.todos == 0 %}
+<div class="container-fluid">
+    <h2>You are on top of the world!</h2>
+</div>
+{% else %}
+{% for todo in todos %}
+{% if user.username|lower == todo.creator|lower and not todo.is_checked %}
+<article class="media content-section">
+    <div class="media-body">
+
+        {% if todo.have_notes %}
+        <h2>
+            <a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a>
+            <button onclick="location.href='{% url 'todo-add-notes' todo.title %}'" class="btn btn-outline-warning"
+                type="submit">View notes</button>
+        </h2>
+        {% else %}
+        <h2>
+            <a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a>
+            <button onclick="location.href='{% url 'todo-add-notes' todo.title %}'" class="btn btn-outline-warning"
+                type="submit">Add notes</button>
+        </h2>
+        {% endif %}
+
+        {% if not todo.important %}
+        <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.title %}'"
+            type="submit" class="btn btn-secondary">
+            <span aria-hidden="true">Mark Important</span>
+        </button>
+        {% else %}
+        <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.title %}'"
+            type="submit" class="btn btn-warning">
+            <span aria-hidden="true">Mark Unimportant</span>
+        </button>
+        {% endif %}
+
+        {% if todo.num_of_subtasks != 0 %}
+        <!-- Showing the number of subtasks -->
+        <p class="dark-mode-assist" style="font-family: Calibri; font-size: 3ch;">Subtasks: {{ todo.num_of_subtasks }}
+            <button style="font-size: 18px;" onclick="location.href='{% url 'todo-add-subtask' todo.title %}'"
+                class="btn btn-outline-info" type="submit">View them</button></p>
+        {% endif %}
+
+        <!-- Button trigger modal -->
+        <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#exampleModalCenter">
+            Delete
+        </button>
+
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog"
+            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content dark-mode-assist-section">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLongTitle">Confirm the deletion</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
-                </fieldset>
-            </form>
+                    <div class="modal-body">
+                        Are you sure you want to delete this task permanently?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button onclick="location.href='{% url 'todo-delete' todo.title %}'" type="submit"
+                            class="btn btn-danger">Yes, I am sure</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal ends -->
+
+        <button onclick="location.href='{% url 'todo-check' todo.title %}'" class="btn btn-outline-success"
+            type="submit">Mark checked</button>
+        {% if todo.num_of_subtasks == 0 %}
+        <button onclick="location.href='{% url 'todo-add-subtask' todo.title %}'" class="btn btn-outline-info"
+            type="submit">Add Sub Tasks</button>
+        {% endif %}
+
+        <!-- Due Date button -->
+        {% if todo.due_date == None %}
+        <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample{{ todo.pk }}"
+            role="button" aria-expanded="false" aria-controls="multiCollapseExample{{ todo.pk }}">Add Due Date</a>
+        <div class="row">
+            <div class="col">
+                <div class="collapse multi-collapse" id="multiCollapseExample{{ todo.pk }}">
+                    <br>
+                    <div class="card card-body dark-mode-assist-section">
+                        <div class="content section">
+                            <form method="POST" name={{ todo.pk }}>
+                                {% csrf_token %}
+                                <fieldset class="form-group dark-mode-assist">
+                                    <legend class="border-bottom mb-4">Due in (days)</legend>
+                                    {{ due_form|crispy }}
+                                    <input type="hidden" name="title" value={{ todo.pk }}>
+                                </fieldset>
+                                <div class="form-group">
+                                    <button class="btn btn-outline-info" type="submit">Add</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        {% if user.profile.todos == 0 %}
-            <div class="container-fluid">
-                <h2>You are on top of the world!</h2>
-            </div>
         {% else %}
-            {% for todo in todos %}
-                {% if user.username|lower == todo.creator|lower and not todo.is_checked %}
-                    <article class="media content-section">
-                        <div class="media-body">
-
-                            {% if todo.notes %}
-                                <h2><a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a> <button onclick="location.href='{% url 'todo-add-notes' todo.pk %}'" class="btn btn-outline-warning" type="submit">View notes</button></h2>
-                            {% else %}
-                                <h2><a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a> <button onclick="location.href='{% url 'todo-add-notes' todo.pk %}'" class="btn btn-outline-warning" type="submit">Add notes</button></h2>
-                            {% endif %}
-
-                            {% if not todo.important %}
-                                <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'" type="submit" class="btn btn-secondary">
-                                    <span aria-hidden="true">Mark Important</span>
-                                </button>
-                            {% else %}
-                                <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'" type="submit" class="btn btn-warning">
-                                    <span aria-hidden="true">Mark Unimportant</span>
-                                </button>
-                            {% endif %}
-
-                            {% if todo.num_of_subtasks != 0 %}
-                            <!-- Showing the number of subtasks -->
-                                <p class="dark-mode-assist" style="font-family: Calibri; font-size: 3ch;">Subtasks: {{ todo.num_of_subtasks }} <button style="font-size: 18px;" onclick="location.href='{% url 'todo-add-subtask' todo.pk %}'" class="btn btn-outline-info" type="submit">View them</button></p>
-                            {% endif %}
-
-                            <!-- Button trigger modal -->
-                            <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#exampleModalCenter">
-                              Delete
-                            </button>
-
-                            <!-- Modal -->
-                            <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-                              <div class="modal-dialog modal-dialog-centered" role="document">
-                                <div class="modal-content dark-mode-assist-section">
-                                  <div class="modal-header">
-                                    <h5 class="modal-title" id="exampleModalLongTitle">Confirm the deletion</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                      <span aria-hidden="true">&times;</span>
-                                    </button>
-                                  </div>
-                                  <div class="modal-body">
-                                    Are you sure you want to delete this task permanently?
-                                  </div>
-                                  <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                    <button onclick="location.href='{% url 'todo-delete' todo.pk %}'" type="submit" class="btn btn-danger">Yes, I am sure</button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <!-- Modal ends -->
-
-                            <button onclick="location.href='{% url 'todo-check' todo.pk %}'" class="btn btn-outline-success" type="submit">Mark checked</button>
-                            {% if todo.num_of_subtasks == 0 %}
-                                <button onclick="location.href='{% url 'todo-add-subtask' todo.pk %}'" class="btn btn-outline-info" type="submit">Add Sub Tasks</button>
-                            {% endif %}
-
-                            <!-- Due Date button -->
-                            {% if todo.due_date == None %}
-                                <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample{{ todo.pk }}" role="button" aria-expanded="false" aria-controls="multiCollapseExample{{ todo.pk }}">Add Due Date</a>
-                                <div class="row">
-                                  <div class="col">
-                                    <div class="collapse multi-collapse" id="multiCollapseExample{{ todo.pk }}">
-                                      <br>
-                                      <div class="card card-body dark-mode-assist-section">
-                                        <div class="content section">
-                                            <form method="POST" name={{ todo.pk }}>
-                                                {% csrf_token %}
-                                                <fieldset class="form-group dark-mode-assist">
-                                                    <legend class="border-bottom mb-4">Due in (days)</legend>
-                                                    {{ due_form|crispy }}
-                                                    <input type="hidden" name="title" value={{ todo.pk }}>
-                                                </fieldset>
-                                                <div class="form-group">
-                                                    <button class="btn btn-outline-info" type="submit">Add</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                            {% else %}
-                                <p2 style="font-weight: 1000; color: {{ todo.due_date_color }}; ">Due on: {{ todo.due_date|date:"F d" }}</p2>
-                                <button onclick="location.href='{% url 'todo-due-remove' todo.pk %}'" class="btn btn-outline-primary" type="submit">Remove Due Date</button>
-                            {% endif %}
-
-                            <br>
-                            <div class="article-metadata">
-                                <small class="text-muted">Created on: {{ todo.date_posted|date:"F d, Y" }}</small>
-                            </div>
-                        </div>
-                    </article>
-                {% endif %}
-            {% endfor %}
+        <p2 style="font-weight: 1000; color: {{ todo.due_date_color }}; ">Due on: {{ todo.due_date|date:"F d" }}</p2>
+        <button onclick="location.href='{% url 'todo-due-remove' todo.title %}'" class="btn btn-outline-primary"
+            type="submit">Remove Due Date</button>
         {% endif %}
-    {% else %}
-    <style>
-        #outer
-        {
-            width:100%;
-            text-align: center;
-        }
-        .inner
-        {
-            display: inline-block;
-            margin: 5px;
-        }
 
-    </style>
-    {% if request.user_agent.is_mobile %}
-        <h1 style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px;"><center>Welcome to my app<br> <b style="background-color: cyan">Regular ToDoList</b></center></h1>
-    {% else %}
-
-        <style>
-            #outer
-            {
-                margin-left: 20ch;
-            }
-        </style>
-
-        <h1 style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px; padding-left: 10ch;"><center>Welcome to my app<br> <b style="background-color: cyan">Regular ToDoList</b></center></h1>
-    {% endif %}
-    <br><br><br>
-    <div id="outer">
-        <div class="inner"><button style="height:65px; width:130px" type="button" onclick="location.href='{% url 'register' %}'" class="btn btn-outline-success">Sign up</button></div>
-        <div class="inner"><button style="height:65px; width:130px" type="button" onclick="location.href='{% url 'login' %}'" class="btn btn-outline-primary">Login</button></div>
         <br>
-        <div class="inner"><button style="height:65px; width:270px" type="button" onclick="location.href='{% url 'todo-about' %}'" class="btn btn-outline-dark">About the app</button></div>
+        <div class="article-metadata">
+            <small class="text-muted">Created on: {{ todo.date_created|date:"F d, Y" }}</small>
+        </div>
     </div>
-    {% endif %}
+</article>
+{% endif %}
+{% endfor %}
+{% endif %}
+{% else %}
+<style>
+    #outer {
+        width: 100%;
+        text-align: center;
+    }
+
+    .inner {
+        display: inline-block;
+        margin: 5px;
+    }
+</style>
+{% if request.user_agent.is_mobile %}
+<h1
+    style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px;">
+    <center>Welcome to my app<br> <b style="background-color: cyan">Regular ToDoList</b></center>
+</h1>
+{% else %}
+
+<style>
+    #outer {
+        margin-left: 20ch;
+    }
+</style>
+
+<h1
+    style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px; padding-left: 10ch;">
+    <center>Welcome to my app<br> <b style="background-color: cyan">Regular ToDoList</b></center>
+</h1>
+{% endif %}
+<br><br><br>
+<div id="outer">
+    <div class="inner"><button style="height:65px; width:130px" type="button"
+            onclick="location.href='{% url 'register' %}'" class="btn btn-outline-success">Sign up</button></div>
+    <div class="inner"><button style="height:65px; width:130px" type="button"
+            onclick="location.href='{% url 'login' %}'" class="btn btn-outline-primary">Login</button></div>
+    <br>
+    <div class="inner"><button style="height:65px; width:270px" type="button"
+            onclick="location.href='{% url 'todo-about' %}'" class="btn btn-outline-dark">About the app</button></div>
+</div>
+{% endif %}
 {% endblock content %}

@@ -12,19 +12,29 @@
                 <div class="content-section dark-mode-assist-section">
                     {% if not subtask.done %}
                         {% if request.user_agent.is_mobile %}
-                            <li style="font-size: 23px;"><a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a>
-                            <br>
-                            <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" type="button" class="btn btn-outline-success">Check it off</button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.pk %}'" type="submit" class="btn btn-outline-danger">Delete</button> </li>
+                            <li style="font-size: 23px;">
+                                <a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a>
+                                <br>
+                                <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" type="button" class="btn btn-outline-success">Check it off</button>
+                                <button onclick="location.href='{% url 'todo-delete-subtask' subtask.title %}'" type="submit" class="btn btn-outline-danger">Delete</button> 
+                            </li>
                         {% else %}
-                            <li style="font-size: 23px;"><a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Check it off</button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.pk %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> </li>
+                            <li style="font-size: 23px;">
+                                <a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> 
+                                <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Check it off</button> 
+                                <button onclick="location.href='{% url 'todo-delete-subtask' subtask.title %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> 
+                            </li>
                         {% endif %}
                     {% else %}
                         {% if request.user_agent.is_mobile %}
-                            <li style="font-size: 23px;"><a style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a>
-                            <br>
-                            <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" type="button" class="btn btn-outline-success">Uncheck it </button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.pk %}'" type="submit" class="btn btn-outline-danger">Delete</button> </li>
+                            <li style="font-size: 23px;">
+                                <a style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a>
+                                <br>
+                                <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" type="button" class="btn btn-outline-success">Uncheck it </button> 
+                                <button onclick="location.href='{% url 'todo-delete-subtask' subtask.title %}'" type="submit" class="btn btn-outline-danger">Delete</button> 
+                            </li>
                         {% else %}
-                            <li style="font-size: 23px;"><a class="control-subtask" style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Uncheck it</button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.pk %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> </li>
+                            <li style="font-size: 23px;"><a class="control-subtask" style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Uncheck it</button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.title %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> </li>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -39,7 +49,7 @@
           <br>
           <div class="card card-body dark-mode-assist-section">
             <div class="content section">
-                <form method="POST" name={{ todo.pk }}>
+                <form method="POST" name={{ todo.title }}>
                     {% csrf_token %}
                     <fieldset class="form-group dark-mode-assist">
                         <legend class="border-bottom mb-4">New subtask</legend>

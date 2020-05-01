@@ -5,7 +5,7 @@ from django.views.generic import ListView, CreateView, UpdateView
 from django.urls import reverse, reverse_lazy
 from users.models import Profile
 from django.contrib.auth.models import User
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm, ContactMeForm
@@ -38,7 +38,7 @@ def home(request):
             due_date = today + datetime.timedelta(days=days)
 
 
-            todo = ToDo.objects.get(pk=int(request.POST.get("title", "")))
+            todo = ToDo.objects.get(pk=request.POST.get("title", ""))
             todo.due_date = due_date
             todo.save()
 
@@ -90,7 +90,7 @@ def home(request):
 
             # The code below handles how the tasks should be filtered when they are sorted by "date_added"
             if user.profile.filter_todos_by == "important_todos":
-                todos = ToDo.objects.filter(important=True).order_by("-date_posted")
+                todos = ToDo.objects.filter(important=True).order_by("-date_created")
 
             elif user.profile.filter_todos_by == "due_date_todos":
                 todos = []
@@ -102,7 +102,7 @@ def home(request):
 
 
             elif user.profile.filter_todos_by == "all_todos":
-                todos = ToDo.objects.all().order_by("-date_posted")
+                todos = ToDo.objects.all().order_by("-date_created")
 
         elif user.profile.sort_todos_by == "due_date":
             due_todos = []
@@ -112,7 +112,7 @@ def home(request):
                 if todo.due_date is not None:
                     due_todos.append(todo)
 
-            for todo in ToDo.objects.all().order_by("-date_posted"):
+            for todo in ToDo.objects.all().order_by("-date_created"):
                 if todo.due_date is None:
                     normal_todos.append(todo)
 
@@ -153,8 +153,8 @@ def home(request):
     return render(request, "ToDo/home.html", context=context)
 
 
-def remove_due_date(request, pk):
-    todo = ToDo.objects.get(pk=pk)
+def remove_due_date(request, title):
+    todo = ToDo.objects.get(title=title)
     todo.due_date = None
     todo.due_date_color = None
 
@@ -261,7 +261,7 @@ def render_insights(request):
                     # If today is not a Monday (that means that the user has visited the place after Monday), we'll analyze todos till the last Monday
                     date_ranger = (today - datetime.timedelta(days=today.weekday())).date()
 
-                if (date_ranger - todo.date_posted.date()).days <= 7:
+                if (date_ranger - todo.date_created.date()).days <= 7:
                     todos_created_this_week.append(todo)
                     if todo.is_checked:
                         todos_completed_this_week.append(todo)
@@ -347,10 +347,10 @@ def render_insights(request):
     return render(request, "ToDo/insights.html", context=context)
 
 
-def add_todo_note(request, pk):
-    todo = ToDo.objects.get(pk=pk)
+def add_todo_note(request, title):
+    todo = ToDo.objects.get(title=title)
     try:
-        note = Notes.objects.get(parent_task=todo.title)
+        note = Notes.objects.get(parent_task=todo)
     except:
         note = Notes()
 
@@ -361,11 +361,10 @@ def add_todo_note(request, pk):
             task_notes = note_form.cleaned_data.get("task_notes")
 
             new_note = Notes(content=task_notes)
-            new_note.parent_task = todo.title
-            new_note.identification_id = todo.pk
+            new_note.parent_task = todo
             new_note.save()
 
-            todo.notes = True
+            todo.have_notes = True
             todo.save()
 
             messages.success(request, "Your notes are saved")
@@ -384,13 +383,11 @@ def add_todo_note(request, pk):
     return render(request, "ToDo/task_notes.html", context=context)
 
 
-def delete_notes(request, pk):
-    note = Notes.objects.get(pk=pk)
-
-    todo = ToDo.objects.get(pk=note.identification_id)
-    todo.notes = False
-    todo.save()
-
+def delete_notes(request, content):
+    note = Notes.objects.get(content=content)
+    
+    note.parent_task.have_notes = False
+    note.parent_task.save()
     note.delete()
 
     messages.info(request, "Your notes are deleted")
@@ -398,8 +395,8 @@ def delete_notes(request, pk):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
-def toggle_important_task(request, pk):
-    todo = ToDo.objects.get(pk=pk)
+def toggle_important_task(request, title):
+    todo = ToDo.objects.get(title=title)
 
     if todo.important:
         todo.important = False
@@ -476,8 +473,8 @@ def toggle_dark_mode(request):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
-def delete(request, pk):
-    todo = ToDo.objects.get(pk=pk)
+def delete(request, title):
+    todo = ToDo.objects.get(title=title)
 
     if not todo.is_checked:
         user = User.objects.get(username=request.user.username)
@@ -491,8 +488,8 @@ def delete(request, pk):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
-def check_todo(request, pk):
-    todo = ToDo.objects.get(pk=pk)
+def check_todo(request, title):
+    todo = ToDo.objects.get(title=title)
     todo.is_checked = True
     todo.date_completed = datetime.datetime.now()
     todo.save()
@@ -504,8 +501,8 @@ def check_todo(request, pk):
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
-def uncheck_todo(request, pk):
-    todo = ToDo.objects.get(pk=pk)
+def uncheck_todo(request, title):
+    todo = ToDo.objects.get(title=title)
     todo.is_checked = False
     todo.date_completed = None
     todo.save()
@@ -517,15 +514,9 @@ def uncheck_todo(request, pk):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
-def add_subtask(request, pk):
-    todo = ToDo.objects.get(pk=pk)
-    subtasks = SubTask.objects.filter(parent_task=todo.title)
-
-    # Making sure that the current user cannot add subtask to someone else's task
-    user = User.objects.get(username=request.user.username)
-    if todo.creator != user:
-        messages.info(request, "Hold up! You cannot see that")
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+def add_subtask(request, title):
+    todo = ToDo.objects.get(title=title)
+    subtasks = SubTask.objects.filter(parent_task=todo)
 
     if request.method == "POST":
         subtask_form = SubTaskForm(request.POST)
@@ -534,11 +525,10 @@ def add_subtask(request, pk):
             subtask_title = subtask_form.cleaned_data.get("sub_task")
 
             subtask = SubTask(title=subtask_title)
-            subtask.parent_task = todo.title
-            subtask.identification_id = todo.pk
+            subtask.parent_task = todo
 
-            todo.num_of_subtasks += 1
-            todo.save()
+            subtask.parent_task.num_of_subtasks += 1
+            subtask.parent_task.save()
 
             subtask.save()
 
@@ -559,12 +549,11 @@ def add_subtask(request, pk):
     return render(request, "ToDo/subtasks.html", context=context)
 
 
-def delete_subtask(request, pk):
-    subtask = SubTask.objects.get(pk=int(pk))
+def delete_subtask(request, title):
+    subtask = SubTask.objects.get(title=title)
 
-    parent_todo = ToDo.objects.get(pk=subtask.identification_id)
-    parent_todo.num_of_subtasks -= 1
-    parent_todo.save()
+    subtask.parent_task.num_of_subtasks -= 1
+    subtask.parent_task.save()
 
     subtask.delete()
 
@@ -573,8 +562,8 @@ def delete_subtask(request, pk):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
-def toggle_subtask(request, pk):
-    subtask = SubTask.objects.get(pk=int(pk))
+def toggle_subtask(request, title):
+    subtask = SubTask.objects.get(title=title)
 
     if subtask.done:
         subtask.done = False
@@ -596,13 +585,24 @@ class TodoCompletedView(ListView):
     model = ToDo
     template_name = "ToDo/completed.html"
     context_object_name = "todos"
-    ordering = ["-date_posted"]
+    ordering = ["-date_created"]
 
 
-class TodoUpdateView(LoginRequiredMixin, UpdateView):
+class TodoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = ToDo
     fields = ["title"]
     success_url = reverse_lazy("todo-home")
+
+    # Checking if the correct user is accessing their tasks
+    def test_func(self):
+        try:
+            todo = ToDo.objects.get(pk=self.kwargs.get("pk"))
+            return True if todo.creator == self.request.user else False
+        except:
+            return False
+        
+    def handle_no_permission(self):
+        return render(self.request, "ToDo/restrict_access.html")
 
     def form_valid(self, form):
         form.instance.creator = self.request.user
@@ -610,23 +610,45 @@ class TodoUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class SubtaskUpdateView(LoginRequiredMixin, UpdateView):
+class SubtaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = SubTask
     fields = ["title"]
     success_url = reverse_lazy("todo-home")
+
+    # Checking if the correct user is accessing their tasks
+    def test_func(self):
+        try:
+            subtask = SubTask.objects.get(pk=self.kwargs.get("pk"))
+            return True if subtask.parent_task.creator == self.request.user else False
+        except:
+            return False
+
+    def handle_no_permission(self):
+        return render(self.request, "ToDo/restrict_access.html")
 
     def form_valid(self, form):
         form.instance.creator = self.request.user
         messages.info(self.request, "Your subtask has been edited")
 
-
         return super().form_valid(form)
 
 
-class ToDoNotesUpdateView(LoginRequiredMixin, UpdateView):
+class ToDoNotesUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Notes
     fields = ["content"]
     success_url = reverse_lazy("todo-home")
+
+    # Checking if the correct user is accessing their tasks
+    def test_func(self):
+        try:
+            note = Notes.objects.get(pk=self.kwargs.get("pk"))
+            return True if note.parent_task.creator == self.request.user else False
+        except:
+            return False
+
+    def handle_no_permission(self):
+        return render(self.request, "ToDo/restrict_access.html")
+        
 
     def form_valid(self, form):
         form.instance.creator = self.request.user
