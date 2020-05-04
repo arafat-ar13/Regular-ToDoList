@@ -8,6 +8,8 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    
 
     {% if user.profile.has_dark_mode %}
         <link rel="stylesheet" type="text/css" href="{% static 'ToDo/main_dark.css' %}">
@@ -118,14 +120,14 @@
                                     <li class="list-group-item dark-mode-assist-section">
                                         Filtered by: <b>{{ user.profile.filter_todos_by }}</b>
                                         {% if user.profile.filter_todos_by == "all_todos" %}
-                                            <a href="{% url 'todo-filter-important' %}" class="list-group-item dark-mode-assist-section">Filter by important tasks?</a>
-                                            <a href="{% url 'todo-filter-due-dates' %}" class="list-group-item dark-mode-assist-section">Filter by due dates?</a>
+                                            <a href="{% url 'todo-filter' 'important_todos' %}" class="list-group-item dark-mode-assist-section">Filter by important tasks?</a>
+                                            <a href="{% url 'todo-filter' 'due_date_todos' %}" class="list-group-item dark-mode-assist-section">Filter by due dates?</a>
                                         {% elif user.profile.filter_todos_by == "important_todos" %}
-                                            <a href="{% url 'todo-filter-normal' %}" class="list-group-item dark-mode-assist-section">Filter by all tasks?</a>
-                                            <a href="{% url 'todo-filter-due-dates' %}" class="list-group-item dark-mode-assist-section">Filter by due dates?</a>
+                                            <a href="{% url 'todo-filter' 'all_todos' %}" class="list-group-item dark-mode-assist-section">Filter by all tasks?</a>
+                                            <a href="{% url 'todo-filter' 'due_date_todos' %}" class="list-group-item dark-mode-assist-section">Filter by due dates?</a>
                                         {% elif user.profile.filter_todos_by == "due_date_todos" %}
-                                            <a href="{% url 'todo-filter-normal' %}" class="list-group-item dark-mode-assist-section">Filter by all tasks?</a>
-                                            <a href="{% url 'todo-filter-important' %}" class="list-group-item dark-mode-assist-section">Filter by important tasks?</a>
+                                            <a href="{% url 'todo-filter' 'all_todos' %}" class="list-group-item dark-mode-assist-section">Filter by all tasks?</a>
+                                            <a href="{% url 'todo-filter' 'important_todos' %}" class="list-group-item dark-mode-assist-section">Filter by important tasks?</a>
                                         {% endif %}
                                     </li>
 
@@ -163,9 +165,11 @@
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script> -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src='https://kit.fontawesome.com/a076d05399.js'></script>
 
 </body>
 </html>

@@ -7,7 +7,7 @@
             <article class="media content-section">
                 <div class="media-body">
                     <h2><a class="article-title"><s>{{ todo.title }}</s></a></h2>
-                    <button onclick="location.href='{% url 'todo-delete' todo.pk %}'" class="btn btn-outline-danger" type="submit">Delete</button>
+                    <button onclick="location.href='{% url 'todo-delete-task' todo.pk %}'" class="btn btn-outline-danger" type="submit">Delete</button>
                     <button onclick="location.href='{% url 'todo-uncheck' todo.pk %}'" class="btn btn-outline-success" type="submit">Uncheck</button>
                     <br>
                     {% if todo.date_completed != None %}

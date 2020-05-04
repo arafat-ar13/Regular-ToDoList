@@ -2,14 +2,45 @@
 {% block content %}
 {% load crispy_forms_tags %}
 {% load user_agents %}
+
+<style>
+    .full-content {
+        width: 100%;
+    }
+
+    .section-middle {
+        position:fixed;
+        top: 50%;
+        left: 50%;
+        margin-top: 1em; /*set to a negative number 1/2 of your height*/
+        margin-left: -15em; /*set to a negative number 1/2 of your width*/
+    }
+
+    .button-size {
+        size: 88px;
+    }
+</style>
+
+
+
 {% if user.is_authenticated %}
-<div class="content section">
+<div class="content section full-content">
     <form method="POST" name="add_form">
         {% csrf_token %}
         <fieldset class="form-group dark-mode-assist">
             <legend class="border-bottom mb-4">New ToDo!</legend>
             {{ add_form|crispy }}
             <div class="form-group">
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-outline-primary active">
+                        <input type="radio" name="options" value="unlisted" id="optionA" autocomplete="off" checked> Unlisted
+                    </label>
+                    {% for tasklist in tasklists %}
+                        <label class="btn btn-outline-primary">
+                            <input type="radio" name="options" id="option{{ tasklist.pk }}" value={{ tasklist.pk }} autocomplete="off">{{ tasklist.title }}
+                        </label>
+                    {% endfor %}
+                </div>
                 <button class="btn btn-outline-info" type="submit" name="add-task">Add</button>
             </div>
         </fieldset>
@@ -24,45 +55,43 @@
 {% for todo in todos %}
 {% if user.username|lower == todo.creator|lower and not todo.is_checked %}
 <article class="media content-section">
-    <div class="media-body">
+    <div class="media-body full-content">
 
-        {% if todo.have_notes %}
+        {% if todo.has_notes %}
         <h2>
-            <a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a>
-            <button onclick="location.href='{% url 'todo-add-notes' todo.title %}'" class="btn btn-outline-warning"
-                type="submit">View notes</button>
+            <button onclick="location.href='{% url 'todo-check' todo.title %}'" class="btn btn-outline-success"><i class="fa fa-check"></i></button> <a style="overflow: hidden; text-overflow: ellipsis;" href="{% url 'todo-detailed' todo.title %}" class="article-title">  {{ todo.title }}</a> <button data-toggle="modal" data-target="#exampleModalCenter" style="float: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
+            {% if todo.parent_list %}
+                <p style="color: chartreuse;"> ({{ todo.parent_list.title }}) </p>
+            {% endif %}
         </h2>
         {% else %}
         <h2>
-            <a href="{% url 'todo-edit' todo.pk %}" class="article-title">{{ todo.title }}</a>
-            <button onclick="location.href='{% url 'todo-add-notes' todo.title %}'" class="btn btn-outline-warning"
-                type="submit">Add notes</button>
+            <button onclick="location.href='{% url 'todo-check' todo.title %}'" class="btn btn-outline-success">
+                <i class="fa fa-check"></i>
+            </button>
+            <a href="{% url 'todo-detailed' todo.title %}" class="article-title">  {{ todo.title }}</a> 
+            <button data-toggle="modal" data-target="#exampleModalCenter" style="float: right;" class="btn btn-outline-danger">
+                <i class="fa fa-trash"></i>
+            </button>
+            {% if todo.parent_list %}
+                <p style="color: chartreuse;"> 
+                    ({{ todo.parent_list.title }})
+                </p>
+            {% endif %}
         </h2>
         {% endif %}
 
         {% if not todo.important %}
         <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.title %}'"
             type="submit" class="btn btn-secondary">
-            <span aria-hidden="true">Mark Important</span>
+            <span aria-hidden="true"><i class="fas fa-star"></i></span>
         </button>
         {% else %}
         <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.title %}'"
             type="submit" class="btn btn-warning">
-            <span aria-hidden="true">Mark Unimportant</span>
+            <span aria-hidden="true"><i class="fas fa-star"></i></span>
         </button>
         {% endif %}
-
-        {% if todo.num_of_subtasks != 0 %}
-        <!-- Showing the number of subtasks -->
-        <p class="dark-mode-assist" style="font-family: Calibri; font-size: 3ch;">Subtasks: {{ todo.num_of_subtasks }}
-            <button style="font-size: 18px;" onclick="location.href='{% url 'todo-add-subtask' todo.title %}'"
-                class="btn btn-outline-info" type="submit">View them</button></p>
-        {% endif %}
-
-        <!-- Button trigger modal -->
-        <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#exampleModalCenter">
-            Delete
-        </button>
 
         <!-- Modal -->
         <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog"
@@ -80,7 +109,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button onclick="location.href='{% url 'todo-delete' todo.title %}'" type="submit"
+                        <button onclick="location.href='{% url 'todo-delete-task' todo.pk %}'" type="submit"
                             class="btn btn-danger">Yes, I am sure</button>
                     </div>
                 </div>
@@ -88,44 +117,9 @@
         </div>
         <!-- Modal ends -->
 
-        <button onclick="location.href='{% url 'todo-check' todo.title %}'" class="btn btn-outline-success"
-            type="submit">Mark checked</button>
-        {% if todo.num_of_subtasks == 0 %}
-        <button onclick="location.href='{% url 'todo-add-subtask' todo.title %}'" class="btn btn-outline-info"
-            type="submit">Add Sub Tasks</button>
-        {% endif %}
-
-        <!-- Due Date button -->
-        {% if todo.due_date == None %}
-        <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample{{ todo.pk }}"
-            role="button" aria-expanded="false" aria-controls="multiCollapseExample{{ todo.pk }}">Add Due Date</a>
-        <div class="row">
-            <div class="col">
-                <div class="collapse multi-collapse" id="multiCollapseExample{{ todo.pk }}">
-                    <br>
-                    <div class="card card-body dark-mode-assist-section">
-                        <div class="content section">
-                            <form method="POST" name={{ todo.pk }}>
-                                {% csrf_token %}
-                                <fieldset class="form-group dark-mode-assist">
-                                    <legend class="border-bottom mb-4">Due in (days)</legend>
-                                    {{ due_form|crispy }}
-                                    <input type="hidden" name="title" value={{ todo.pk }}>
-                                </fieldset>
-                                <div class="form-group">
-                                    <button class="btn btn-outline-info" type="submit">Add</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {% else %}
+        <!-- Due Date -->
+        {% if todo.due_date != None %}
         <p2 style="font-weight: 1000; color: {{ todo.due_date_color }}; ">Due on: {{ todo.due_date|date:"F d" }}</p2>
-        <button onclick="location.href='{% url 'todo-due-remove' todo.title %}'" class="btn btn-outline-primary"
-            type="submit">Remove Due Date</button>
         {% endif %}
 
         <br>

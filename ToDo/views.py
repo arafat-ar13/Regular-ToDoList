@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, HttpResponseRedirect
 from django.contrib import messages
-from .models import ToDo, SubTask, Notes
+from .models import ToDo, SubTask, Notes, TaskList
 from django.views.generic import ListView, CreateView, UpdateView
 from django.urls import reverse, reverse_lazy
 from users.models import Profile
@@ -13,44 +13,29 @@ from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm, Contact
 import datetime
 import calendar
 
+# Handling error views
+def handler500(request, *args):
+    return render(request, 'ToDo/Error Pages/500.html', status=500)
+
+def handler404(request, *args):
+    return render(request, 'ToDo/Error Pages/500.html', status=404)
+
 def home(request):
     if request.method == "POST":
-        due_form = DueDateForm(request.POST)
         add_form = NewTaskForm(request.POST)
 
-        if due_form.is_valid():
-            days = due_form.cleaned_data.get("due_date").lower()
-
-            if days == "today":
-                days = 0
-            elif days == "tomorrow":
-                days = 1
-            elif days == "next week":
-                days = 7
-            elif days == "yesterday":
-                days = -1
-            elif days == "last week":
-                days = -7
-            else:
-                days = int(days)
-
-            today = datetime.datetime.today()
-            due_date = today + datetime.timedelta(days=days)
-
-
-            todo = ToDo.objects.get(pk=request.POST.get("title", ""))
-            todo.due_date = due_date
-            todo.save()
-
-            messages.success(request, "Due Date added to task")
-
-            return redirect("todo-home")
-
-
-        elif add_form.is_valid():
+        if add_form.is_valid():
             title = add_form.cleaned_data.get("title")
             todo = ToDo(title=title)
+
+            if request.POST.get('options') != "unlisted":
+                # Getting the user requested tasklist
+                todo.parent_list = TaskList.objects.get(pk=request.POST.get("options"))
+                todo.parent_list.num_of_tasks += 1
+                todo.parent_list.save()
+
             todo.creator = request.user
+
             todo.save()
 
             user = User.objects.get(username=request.user.username)
@@ -63,14 +48,12 @@ def home(request):
 
     else:
         add_form = NewTaskForm()
-        due_form = DueDateForm()
-
 
     # Checking today's date and comparing colors of due dates
     today = datetime.datetime.now(datetime.timezone.utc)
-    todo_objects = ToDo.objects.all()
+    user_todos = ToDo.objects.filter(creator=request.user)
 
-    for todo in todo_objects:
+    for todo in user_todos:
         if todo.due_date is not None:
             if todo.due_date.day == today.day:
                 todo.due_date_color = "blue"
@@ -81,7 +64,7 @@ def home(request):
 
             todo.save()
 
-    todos = todo_objects
+    todos = user_todos
 
     # Handling how the user's tasks should be sorted
     if request.user.is_authenticated:
@@ -90,11 +73,11 @@ def home(request):
 
             # The code below handles how the tasks should be filtered when they are sorted by "date_added"
             if user.profile.filter_todos_by == "important_todos":
-                todos = ToDo.objects.filter(important=True).order_by("-date_created")
+                todos = user_todos.filter(important=True).order_by("-date_created")
 
             elif user.profile.filter_todos_by == "due_date_todos":
                 todos = []
-                for todo in ToDo.objects.all():
+                for todo in user_todos.all():
                     if todo.due_date is not None:
                         todos.append(todo)
 
@@ -102,17 +85,17 @@ def home(request):
 
 
             elif user.profile.filter_todos_by == "all_todos":
-                todos = ToDo.objects.all().order_by("-date_created")
+                todos = user_todos.order_by("-date_created")
 
         elif user.profile.sort_todos_by == "due_date":
             due_todos = []
             normal_todos = []
 
-            for todo in ToDo.objects.all().order_by("due_date"):
+            for todo in user_todos.order_by("due_date"):
                 if todo.due_date is not None:
                     due_todos.append(todo)
 
-            for todo in ToDo.objects.all().order_by("-date_created"):
+            for todo in user_todos.order_by("-date_created"):
                 if todo.due_date is None:
                     normal_todos.append(todo)
 
@@ -144,13 +127,111 @@ def home(request):
                 user.save()
 
 
+    # Working with TaskLists
+    tasklists = TaskList.objects.filter(owner=request.user)
+
     context = {
         "todos": todos,
+        "tasklists": tasklists,
         "add_form": add_form,
-        "due_form": due_form
     }
 
     return render(request, "ToDo/home.html", context=context)
+
+
+def todo_detail(request, title):
+    todo = ToDo.objects.get(title=title)
+    
+    # Security check
+    if todo.creator != request.user:
+        return render(request, "ToDo/restrict_access.html") 
+
+    subtasks = SubTask.objects.filter(parent_task=todo)
+
+    try:
+        note = Notes.objects.get(parent_task=todo)
+    except:
+        note = Notes()
+
+    if request.method == "POST":
+        note_form = ToDoNotesForm(request.POST)
+        subtask_form = SubTaskForm(request.POST)
+        due_form = DueDateForm(request.POST)
+
+        if note_form.is_valid():
+            task_notes = note_form.cleaned_data.get("task_notes")
+
+            new_note = Notes(content=task_notes)
+            new_note.parent_task = todo
+            new_note.save()
+
+            todo.has_notes = True
+            todo.save()
+
+            messages.success(request, "Your notes are saved")
+
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+        elif subtask_form.is_valid():
+            subtask_title = subtask_form.cleaned_data.get("sub_task")
+
+            subtask = SubTask(title=subtask_title)
+            subtask.parent_task = todo
+
+            subtask.parent_task.num_of_subtasks += 1
+            subtask.parent_task.save()
+
+            subtask.save()
+
+            messages.success(request, "Subtask added")
+
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+        
+        elif due_form.is_valid():
+            days = due_form.cleaned_data.get("due_date").lower()
+
+            if days == "today":
+                days = 0
+            elif days == "tomorrow":
+                days = 1
+            elif days == "next week":
+                days = 7
+            elif days == "yesterday":
+                days = -1
+            elif days == "last week":
+                days = -7
+            else:
+                days = int(days)
+
+            today = datetime.datetime.today()
+            due_date = today + datetime.timedelta(days=days)
+
+
+            todo = ToDo.objects.get(pk=request.POST.get("title", ""))
+            todo.due_date = due_date
+            todo.save()
+
+            messages.success(request, "Due Date added to task")
+
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+    else:
+        note_form = ToDoNotesForm()
+        subtask_form = SubTaskForm()
+        due_form = DueDateForm()
+
+
+    context = {
+        "todo": todo,
+        "note_form": note_form,
+        "note": note,
+        "subtask_form": subtask_form,
+        "subtasks": subtasks,
+        "due_form": due_form,
+        "title": todo.title
+    }
+
+    return render(request, "ToDo/detailed_view.html", context=context)
 
 
 def remove_due_date(request, title):
@@ -347,46 +428,14 @@ def render_insights(request):
     return render(request, "ToDo/insights.html", context=context)
 
 
-def add_todo_note(request, title):
-    todo = ToDo.objects.get(title=title)
-    try:
-        note = Notes.objects.get(parent_task=todo)
-    except:
-        note = Notes()
-
-    if request.method == "POST":
-        note_form = ToDoNotesForm(request.POST)
-
-        if note_form.is_valid():
-            task_notes = note_form.cleaned_data.get("task_notes")
-
-            new_note = Notes(content=task_notes)
-            new_note.parent_task = todo
-            new_note.save()
-
-            todo.have_notes = True
-            todo.save()
-
-            messages.success(request, "Your notes are saved")
-
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-    else:
-        note_form = ToDoNotesForm()
-
-    context = {
-        "todo": todo,
-        "note_form": note_form,
-        "note": note
-    }
-
-    return render(request, "ToDo/task_notes.html", context=context)
+def view_taskslists(request):
+    return render(request, "ToDo/tasklists.html")
 
 
 def delete_notes(request, content):
     note = Notes.objects.get(content=content)
     
-    note.parent_task.have_notes = False
+    note.parent_task.has_notes = False
     note.parent_task.save()
     note.delete()
 
@@ -422,38 +471,14 @@ def toggle_user_sort(request):
 
     messages.success(request, "Your sort order altered")
 
-    return redirect("todo-home")
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
+def filter_todos(request, filter_type):
+    request.user.profile.filter_todos_by = filter_type
+    request.user.save()
 
-def filter_by_important(request):
-    user = User.objects.get(username=request.user.username)
-
-    user.profile.filter_todos_by = "important_todos"
-    user.save()
-
-    messages.success(request, "You are viewing only important todos")
-
-    return redirect("todo-home")
-
-def filter_by_due_dates(request):
-    user = User.objects.get(username=request.user.username)
-
-    user.profile.filter_todos_by = "due_date_todos"
-    user.save()
-
-    messages.success(request, "You are only viewing tasks with due dates")
-
-    return redirect("todo-home")
-
-def filter_normal(request):
-    user = User.objects.get(username=request.user.username)
-
-    user.profile.filter_todos_by = "all_todos"
-    user.save()
-
-    messages.success(request, "You are viewing all your todos")
-
-    return redirect("todo-home")
+    messages.success(request, "Your tasks are now filtered accordingly")
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def toggle_dark_mode(request):
@@ -473,8 +498,12 @@ def toggle_dark_mode(request):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
-def delete(request, title):
-    todo = ToDo.objects.get(title=title)
+def delete(request, pk):
+    todo = ToDo.objects.get(pk=pk)
+    if todo.creator != request.user:
+        messages.info(request, "Your permission is DENIED")
+
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
     if not todo.is_checked:
         user = User.objects.get(username=request.user.username)
@@ -512,41 +541,6 @@ def uncheck_todo(request, title):
     user.save()
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-
-def add_subtask(request, title):
-    todo = ToDo.objects.get(title=title)
-    subtasks = SubTask.objects.filter(parent_task=todo)
-
-    if request.method == "POST":
-        subtask_form = SubTaskForm(request.POST)
-
-        if subtask_form.is_valid():
-            subtask_title = subtask_form.cleaned_data.get("sub_task")
-
-            subtask = SubTask(title=subtask_title)
-            subtask.parent_task = todo
-
-            subtask.parent_task.num_of_subtasks += 1
-            subtask.parent_task.save()
-
-            subtask.save()
-
-            messages.success(request, "Subtask added")
-
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-    else:
-        subtask_form = SubTaskForm()
-
-
-    context = {
-        "todo": todo,
-        "subtask_form": subtask_form,
-        "subtasks": subtasks
-    }
-
-    return render(request, "ToDo/subtasks.html", context=context)
 
 
 def delete_subtask(request, title):

@@ -28,12 +28,27 @@
     }
 </style>
 
-<!-- Simple JS function to perform basic arithmetic -->
-<script>
 
+<script>
+    //Simple JS function to perform basic arithmetic 
     function subtract(val1, val2, htmlElementId) {
         let ans = val1 - val2
         document.getElementById(htmlElementId).innerHTML = ans;
+    }
+
+    function animateValue(id, start, end, duration) {
+        var range = end - start;
+        var current = start;
+        var increment = end > start? 1 : -1;
+        var stepTime = Math.abs(Math.floor(duration / range));
+        var obj = document.getElementById(id);
+        var timer = setInterval(function() {
+            current += increment;
+            obj.innerHTML = current;
+            if (current == end) {
+                clearInterval(timer);
+            }
+        }, stepTime);
     }
 
 </script>
@@ -109,7 +124,7 @@
         <br><br><br>
         <div class="content-section dark-mode-assist-section">
             <center>
-                <h1>Since the day you became a user of this app, you created: <br><b class="important-num-major">{{ user.profile.total_todos }}</b> todos</h1>
+                <h1>Since the day you became a user of this app, you created: <br><b id="total" class="important-num-major"><script>animateValue("total", 0, {{ user.profile.total_todos }}, 5000)</script></b> todos</h1>
                 <h1>And you completed: <span id="js-caller" class="important-num-minor"><script>subtract({{ user.profile.total_todos }}, {{ user.profile.todos }}, "js-caller")</script></span> of them! Wow!</h1>
             </center>
             <small style="color: green;">Tip: This insight will update every time you complete or create tasks</small>
@@ -120,13 +135,13 @@
         {% if user.profile.todos_created_this_week != 0 %}
             <div class="content-section dark-mode-assist-section">
                 <center>
-                    <h1>This week you created: <br><b class="important-num-major">{{ user.profile.todos_created_this_week }}</b> todos</h1>
-                    <h1>And you completed: <b class="important-num-minor">{{ user.profile.todos_completed_this_week }}</b> of them!!</h1>
+                    <h1>This week you created: <br><b id="id-1" class="important-num-major"><script>animateValue("id-1", 0, {{ user.profile.todos_created_this_week }}, 2000)</script></b> todos</h1>
+                    <h1>And you completed: <b id="id-2" class="important-num-minor"><script>animateValue("id-2", 0, {{ user.profile.todos_completed_this_week }}, 2000)</script></b> of them!!</h1>
 
                     <br>
                     <h3>
                         By analyzing you, the AI has said that you
-                        were about <br><b class="important-num-major">{{ user.profile.efficiency_this_week }}%</b><br> efficient this week
+                        were about <br><b id="efficiency" class="important-num-major"><script>animateValue("efficiency", 0, {{ user.profile.efficiency_this_week }}, 4000)</script></b>%<br> efficient this week
                     </h3>
                     <br>
                     {% if user.profile.efficiency_change != 0 %}
@@ -149,7 +164,7 @@
         {% if user.profile.todos_completed_on_time != 0 %}
             <div class="content-section dark-mode-assist-section">
                 <center>
-                    <h1>This week you completed <br><b class="important-num-major">{{ user.profile.todos_completed_on_time }}</b><br> todos just on time! Yay!</h1>
+                    <h1>This week you completed <br><b id='id-3' class="important-num-major"><script>animateValue("id-3", 0, {{ user.profile.todos_completed_on_time }}, 100)</script></b><br> todos just on time! Yay!</h1>
                 </center>
             </div>
         {% endif %}
@@ -158,7 +173,7 @@
             <div class="content-section dark-mode-assist-section">
                 <center>
                     <h1>
-                        This week you completed <br><b class="important-num-major">{{ user.profile.todos_completed_created_long_ago }}</b><br>
+                        This week you completed <br><b id="id-4" class="important-num-major"><script>animateValue("id-4", 0, {{ user.profile.todos_completed_created_long_ago }}, 100)</script></b><br>
                         todos that you created long before but couldn't find time to complete but this week you did! Awesome!!
                     </h1>
                 </center>

@@ -22,6 +22,7 @@ class Profile(models.Model):
     efficiency_change = models.IntegerField(default=0)
     efficiency_change_type = models.CharField(max_length=100, default="NOT_PROVIDED")
     todos_completed_created_long_ago = models.IntegerField(default=0)
+    default_tasklist = models.CharField(max_length=65, default="Unlisted")
 
     def __str__(self):
         return f"{self.user.username} Profile"

@@ -1,0 +1,151 @@
+{% extends "ToDo/base.html" %}
+{% block content %}
+{% load crispy_forms_tags %}
+
+<div class="content-section dark-mode-assist-section">
+    <h1 style="text-align: center; margin-left: 33px;">
+        <a style="color:lightskyblue; text-decoration: none;" href="{% url 'todo-edit' todo.pk %}"> {{ todo.title }} </a>
+        {% if todo.important %}
+            <button style="float: right;" class="btn btn-warning"><i class="fas fa-star"></i></button>
+        {% endif %}
+        <br>
+        {% if todo.parent_list != None %}
+            <p style="font-size: 50px; color:lightcoral" >({{ todo.parent_list.title }})</p>
+        {% endif %}
+    </h1>
+    <small>Created on: {{ todo.date_created|date:"F d" }}</small>
+    <br>
+
+    {% if todo.due_date != None %}
+        <p style="font-size: 25px; color: {{ todo.due_date_color }}">Due on: {{ todo.due_date|date:"F d" }} <button onclick="location.href='{% url 'todo-due-remove' todo.title %}'" class="btn btn-outline-danger"><i class="fa fa-trash"></i></button></p>
+    {% else %}
+        {% if todo.due_date == None %}
+            <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample{{ todo.pk }}"
+                role="button" aria-expanded="false" aria-controls="multiCollapseExample{{ todo.pk }}">Due Date <i class="far fa-clock"></i></a>
+            <div class="row">
+                <div class="col">
+                    <div class="collapse multi-collapse" id="multiCollapseExample{{ todo.pk }}">
+                        <br>
+                        <div class="card card-body dark-mode-assist-section">
+                            <div class="content section">
+                                <form method="POST" name={{ todo.pk }}>
+                                    {% csrf_token %}
+                                    <fieldset class="form-group dark-mode-assist">
+                                        <legend class="border-bottom mb-4">Due in (days)</legend>
+                                        {{ due_form|crispy }}
+                                        <input type="hidden" name="title" value={{ todo.pk }}>
+                                    </fieldset>
+                                    <div class="form-group">
+                                        <button class="btn btn-outline-info" type="submit">Add</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br>
+        {% endif %}
+    {% endif %}
+
+    {% if subtasks %}
+        <br><br>
+        <center style="font-size:27px; background-color: burlywood; color: 'black';">Subtasks for this task:</center>
+        <br>
+        <div style="padding-left: 4ch;">
+            {% for subtask in subtasks %}
+                <div class="content-section dark-mode-assist-section">
+                    {% if not subtask.done %}
+                        {% if request.user_agent.is_mobile %}
+                            <li style="font-size: 23px;">
+                                <a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a>
+                                <br>
+                                <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" type="button" class="btn btn-outline-success">Check it off</button>
+                                <button onclick="location.href='{% url 'todo-delete-subtask' subtask.title %}'" type="submit" class="btn btn-outline-danger">Delete</button> 
+                            </li>
+                        {% else %}
+                            <li style="font-size: 23px;">
+                                <a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> 
+                                <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Check it off</button> 
+                                <button onclick="location.href='{% url 'todo-delete-subtask' subtask.title %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> 
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        {% if request.user_agent.is_mobile %}
+                            <li style="font-size: 23px;">
+                                <a style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a>
+                                <br>
+                                <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" type="button" class="btn btn-outline-success">Uncheck it </button> 
+                                <button onclick="location.href='{% url 'todo-delete-subtask' subtask.title %}'" type="submit" class="btn btn-outline-danger">Delete</button> 
+                            </li>
+                        {% else %}
+                            <li style="font-size: 23px;"><a class="control-subtask" style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Uncheck it</button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.title %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> </li>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample" role="button" aria-expanded="false" aria-controls="multiCollapseExample">Add subtask</a>
+    <div class="row">
+      <div class="col">
+        <div class="collapse multi-collapse" id="multiCollapseExample">
+          <br>
+          <div class="card card-body dark-mode-assist-section">
+            <div class="content section">
+                <form method="POST" name={{ todo.title }}>
+                    {% csrf_token %}
+                    <fieldset class="form-group dark-mode-assist">
+                        <legend class="border-bottom mb-4">New subtask</legend>
+                        {{ subtask_form|crispy }}
+                    </fieldset>
+                    <div class="form-group">
+                        <button class="btn btn-outline-info" type="submit">Add</button>
+                    </div>
+                </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br><br>
+
+    {% if todo.has_notes %}
+        <br>
+        <center style="font-size:27px; background-color: burlywood; color: 'black';">Notes for this task:</center>
+        <h3>
+            <br>
+            <div style="font-family:Candara">{{ note.content|linebreaks }}</div>
+            <button class="btn btn-outline-danger" type="submit" onclick="location.href='{% url 'todo-delete-notes' note.content %}'">Delete notes</button>
+            <button class="btn btn-outline-info" type="submit" onclick="location.href='{% url 'todo-edit-notes' note.pk %}'">Edit notes</button>
+        </h3>
+        <p>
+            <br>
+            Notes added on: <b>{{ note.date_added|date:"F d, Y" }}</b>
+            <br>
+        
+            {% if note.date_edited != note.date_added %}
+                Notes edited on: <b>{{ note.date_edited|date:"F d, Y" }}</b>
+            {% endif %}
+        </p>
+
+    {% else %}
+
+        <br>
+        <form method="POST" name={{ note.pk }} >
+            {% csrf_token %}
+            <fieldset class="form-group dark-mode-assist">
+                <legend class="border-bottom mb-4">Add notes</legend>
+                {{ note_form|crispy }}
+                <input type="hidden" name="title" value={{ note.pk }}>
+            </fieldset>
+            <div class="form-group">
+                <button class="btn btn-outline-info" type="submit">Add</button>
+            </div>
+        </form>
+
+    {% endif %}
+</div>
+
+{% endblock content %}
