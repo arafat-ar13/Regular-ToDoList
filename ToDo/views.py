@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
-from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm, ContactMeForm
+from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm, ContactMeForm, NewTaskListForm
 
 import datetime
 import calendar
@@ -49,25 +49,31 @@ def home(request):
     else:
         add_form = NewTaskForm()
 
-    # Checking today's date and comparing colors of due dates
-    today = datetime.datetime.now(datetime.timezone.utc)
-    user_todos = ToDo.objects.filter(creator=request.user)
+    todos = ToDo()
+    tasklists = TaskList()
 
-    for todo in user_todos:
-        if todo.due_date is not None:
-            if todo.due_date.day == today.day:
-                todo.due_date_color = "blue"
-            elif todo.due_date > today:
-                todo.due_date_color = "green"
-            elif todo.due_date < today:
-                todo.due_date_color = "red"
-
-            todo.save()
-
-    todos = user_todos
-
-    # Handling how the user's tasks should be sorted
+    
     if request.user.is_authenticated:
+        tasklists = TaskList.objects.filter(owner=request.user)
+
+        # Checking today's date and comparing colors of due dates
+        today = datetime.datetime.now(datetime.timezone.utc)
+        user_todos = ToDo.objects.filter(creator=request.user)
+
+        for todo in user_todos:
+            if todo.due_date is not None:
+                if todo.due_date.day == today.day:
+                    todo.due_date_color = "blue"
+                elif todo.due_date > today:
+                    todo.due_date_color = "green"
+                elif todo.due_date < today:
+                    todo.due_date_color = "red"
+
+                todo.save()
+
+        todos = user_todos
+
+        # Handling how the user's tasks should be sorted
         user = User.objects.get(username=request.user.username)
         if user.profile.sort_todos_by == "date_added":
 
@@ -126,9 +132,6 @@ def home(request):
                 user.profile.generated_insights_this_week = False
                 user.save()
 
-
-    # Working with TaskLists
-    tasklists = TaskList.objects.filter(owner=request.user)
 
     context = {
         "todos": todos,
@@ -429,19 +432,73 @@ def render_insights(request):
 
 
 def view_taskslists(request):
-    return render(request, "ToDo/tasklists.html")
+    user_lists = TaskList.objects.filter(owner=request.user)
 
+    if request.method == "POST":
+        list_form = NewTaskListForm(request.POST)
 
-def delete_notes(request, content):
-    note = Notes.objects.get(content=content)
+        if list_form.is_valid():
+            list_title = list_form.cleaned_data.get("title")
+
+            new_list = TaskList(title=list_title)
+            new_list.owner = request.user
+            new_list.save()
+
+            messages.success(request, "Your shiny new list is ready to be used")
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
     
-    note.parent_task.has_notes = False
-    note.parent_task.save()
-    note.delete()
+    else:
+        list_form = NewTaskListForm()
 
-    messages.info(request, "Your notes are deleted")
+    context = {
+        "user_lists": user_lists,
+        "list_form": list_form,
+        "title": "Your Lists"
+    }
 
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+    return render(request, "ToDo/tasklists_overview.html", context=context)
+
+
+def tasklist_single_view(request, title, pk):
+    try:
+        tasklist = TaskList.objects.get(title=title, pk=pk, owner=request.user)
+    except:
+        return render(request, "ToDo/restrict_access.html")
+
+    todos = ToDo.objects.filter(parent_list=tasklist, is_checked=False)
+
+    if request.method == "POST":
+        add_form = NewTaskForm(request.POST)
+
+        if add_form.is_valid():
+            task_title = add_form.cleaned_data.get("title")
+            todo = ToDo(title=task_title)
+            
+            todo.creator = request.user
+            request.user.profile.todos += 1
+            request.user.profile.total_todos += 1
+            request.user.save()
+
+            todo.parent_list = TaskList.objects.get(title=title, owner=request.user)
+            todo.parent_list.num_of_tasks += 1
+            todo.parent_list.save()
+
+            todo.save()
+
+            messages.success(request, "Your new task has been added")
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+        
+    else:
+        add_form = NewTaskForm()
+
+
+    context = {
+        "tasklist": tasklist,
+        "todos": todos,
+        "add_form": add_form
+    }
+
+    return render(request, "ToDo/tasklist_single_view.html", context=context)
 
 
 def toggle_important_task(request, title):
@@ -473,6 +530,7 @@ def toggle_user_sort(request):
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
+
 def filter_todos(request, filter_type):
     request.user.profile.filter_todos_by = filter_type
     request.user.save()
@@ -498,24 +556,69 @@ def toggle_dark_mode(request):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
-def delete(request, pk):
-    todo = ToDo.objects.get(pk=pk)
-    if todo.creator != request.user:
-        messages.info(request, "Your permission is DENIED")
+def delete(request, item_type, pk):
+    """
+    Universal view function to delete any object from the database
+    """
+    if item_type == "todo":
+        try:
+            todo = ToDo.objects.get(pk=pk, creator=request.user)
+        except:
+            return render(request, "ToDo/restrict_access.html")
 
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+        if not todo.is_checked:
+            request.user.profile.todos -= 1
 
-    if not todo.is_checked:
-        user = User.objects.get(username=request.user.username)
-        user.profile.todos -= 1
-        user.profile.total_todos -= 1
-        user.save()
+        request.user.profile.total_todos -= 1
+        request.user.save()
 
-    todo.delete()
-    messages.info(request, "Item removed!!")
+        todo.delete()
+    
+        
+    elif item_type == "subtask":
+        subtask = SubTask.objects.get(pk=pk)
 
+        # Security check
+        if subtask.parent_task.creator != request.user:
+            return render(request, "ToDo/restrict_access.html")
+        
+        subtask.parent_task.num_of_subtasks -= 1
+        subtask.parent_task.save()
+
+        subtask.delete()
+
+    elif item_type == "notes":
+        notes = Notes.objects.get(pk=pk)
+
+        # Security check
+        if notes.parent_task.creator != request.user:
+            return render(request, "ToDo/restrict_access.html")
+
+        notes.parent_task.has_notes = False
+        notes.parent_task.save()
+        notes.delete()
+
+    elif item_type == "tasklist":
+        try:
+            tasklist = TaskList.objects.get(pk=pk, owner=request.user)
+        except:
+            return render(request, "ToDo/restrict_access.html")
+        
+        # Delete child todos from the database
+        for todo in ToDo.objects.filter(parent_list=tasklist):
+            if not todo.is_checked:
+                request.user.profile.todos -= 1
+
+            request.user.profile.total_todos -= 1
+            request.user.save()
+
+            todo.delete()
+
+        tasklist.delete()
+
+    messages.info(request, f"Your {item_type} was deleted")
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
+    
 
 def check_todo(request, title):
     todo = ToDo.objects.get(title=title)
@@ -530,8 +633,9 @@ def check_todo(request, title):
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
-def uncheck_todo(request, title):
-    todo = ToDo.objects.get(title=title)
+
+def uncheck_todo(request, pk):
+    todo = ToDo.objects.get(pk=pk)
     todo.is_checked = False
     todo.date_completed = None
     todo.save()
@@ -539,19 +643,6 @@ def uncheck_todo(request, title):
     user = User.objects.get(username=request.user.username)
     user.profile.todos += 1
     user.save()
-
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-
-def delete_subtask(request, title):
-    subtask = SubTask.objects.get(title=title)
-
-    subtask.parent_task.num_of_subtasks -= 1
-    subtask.parent_task.save()
-
-    subtask.delete()
-
-    messages.info(request, "Item removed!!")
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 

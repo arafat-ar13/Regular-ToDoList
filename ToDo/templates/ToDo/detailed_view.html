@@ -61,13 +61,13 @@
                                 <a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a>
                                 <br>
                                 <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" type="button" class="btn btn-outline-success">Check it off</button>
-                                <button onclick="location.href='{% url 'todo-delete-subtask' subtask.title %}'" type="submit" class="btn btn-outline-danger">Delete</button> 
+                                <button onclick="location.href='{% url 'delete-item' 'subtask' subtask.pk %}'" type="submit" class="btn btn-outline-danger">Delete</button> 
                             </li>
                         {% else %}
                             <li style="font-size: 23px;">
                                 <a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> 
                                 <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Check it off</button> 
-                                <button onclick="location.href='{% url 'todo-delete-subtask' subtask.title %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> 
+                                <button onclick="location.href='{% url 'delete-item' 'subtask' subtask.pk %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> 
                             </li>
                         {% endif %}
                     {% else %}
@@ -76,10 +76,10 @@
                                 <a style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a>
                                 <br>
                                 <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" type="button" class="btn btn-outline-success">Uncheck it </button> 
-                                <button onclick="location.href='{% url 'todo-delete-subtask' subtask.title %}'" type="submit" class="btn btn-outline-danger">Delete</button> 
+                                <button onclick="location.href='{% url 'delete-item' 'subtask' subtask.pk %}'" type="submit" class="btn btn-outline-danger">Delete</button> 
                             </li>
                         {% else %}
-                            <li style="font-size: 23px;"><a class="control-subtask" style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Uncheck it</button> <button onclick="location.href='{% url 'todo-delete-subtask' subtask.title %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> </li>
+                            <li style="font-size: 23px;"><a class="control-subtask" style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Uncheck it</button> <button onclick="location.href='{% url 'delete-item' 'subtask' subtask.pk %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> </li>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -117,7 +117,7 @@
         <h3>
             <br>
             <div style="font-family:Candara">{{ note.content|linebreaks }}</div>
-            <button class="btn btn-outline-danger" type="submit" onclick="location.href='{% url 'todo-delete-notes' note.content %}'">Delete notes</button>
+            <button class="btn btn-outline-danger" type="submit" onclick="location.href='{% url 'delete-item' 'notes' note.pk %}'">Delete notes</button>
             <button class="btn btn-outline-info" type="submit" onclick="location.href='{% url 'todo-edit-notes' note.pk %}'">Edit notes</button>
         </h3>
         <p>
