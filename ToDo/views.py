@@ -20,6 +20,7 @@ def handler500(request, *args):
 def handler404(request, *args):
     return render(request, 'ToDo/Error Pages/500.html', status=404)
 
+
 def home(request):
     if request.method == "POST":
         add_form = NewTaskForm(request.POST)
@@ -142,12 +143,12 @@ def home(request):
     return render(request, "ToDo/home.html", context=context)
 
 
-def todo_detail(request, title):
-    todo = ToDo.objects.get(title=title)
-    
-    # Security check
-    if todo.creator != request.user:
-        return render(request, "ToDo/restrict_access.html") 
+@login_required
+def todo_detail(request, title, pk):
+    try:
+        todo = ToDo.objects.get(title=title, creator=request.user, pk=pk)
+    except:
+        return render(request, "ToDo/restrict_access.html")
 
     subtasks = SubTask.objects.filter(parent_task=todo)
 
@@ -209,8 +210,6 @@ def todo_detail(request, title):
             today = datetime.datetime.today()
             due_date = today + datetime.timedelta(days=days)
 
-
-            todo = ToDo.objects.get(pk=request.POST.get("title", ""))
             todo.due_date = due_date
             todo.save()
 
@@ -223,6 +222,11 @@ def todo_detail(request, title):
         subtask_form = SubTaskForm()
         due_form = DueDateForm()
 
+    # Task progress percentage
+    percentage = 0
+    if subtasks:
+        subtasks_completed = subtasks.filter(done=True).count()
+        percentage = int((subtasks_completed/subtasks.count()) * 100)
 
     context = {
         "todo": todo,
@@ -231,21 +235,27 @@ def todo_detail(request, title):
         "subtask_form": subtask_form,
         "subtasks": subtasks,
         "due_form": due_form,
-        "title": todo.title
+        "title": todo.title,
+        "percentage": percentage
     }
 
     return render(request, "ToDo/detailed_view.html", context=context)
 
 
-def remove_due_date(request, title):
-    todo = ToDo.objects.get(title=title)
+@login_required
+def remove_due_date(request, pk):
+    try:
+        todo = ToDo.objects.get(pk=pk, creator=request.user)
+    except:
+        return render(request, "ToDo/restrict_access.html")
+
     todo.due_date = None
     todo.due_date_color = None
 
     todo.save()
     messages.info(request, "Due Date removed")
 
-    return redirect("todo-home")
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def about(request):
@@ -431,6 +441,7 @@ def render_insights(request):
     return render(request, "ToDo/insights.html", context=context)
 
 
+@login_required
 def view_taskslists(request):
     user_lists = TaskList.objects.filter(owner=request.user)
 
@@ -459,6 +470,7 @@ def view_taskslists(request):
     return render(request, "ToDo/tasklists_overview.html", context=context)
 
 
+@login_required
 def tasklist_single_view(request, title, pk):
     try:
         tasklist = TaskList.objects.get(title=title, pk=pk, owner=request.user)
@@ -495,14 +507,16 @@ def tasklist_single_view(request, title, pk):
     context = {
         "tasklist": tasklist,
         "todos": todos,
-        "add_form": add_form
+        "add_form": add_form,
+        "title": title
     }
 
     return render(request, "ToDo/tasklist_single_view.html", context=context)
 
 
-def toggle_important_task(request, title):
-    todo = ToDo.objects.get(title=title)
+@login_required
+def toggle_important_task(request, pk):
+    todo = ToDo.objects.get(pk=pk)
 
     if todo.important:
         todo.important = False
@@ -517,6 +531,7 @@ def toggle_important_task(request, title):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
+@login_required()
 def toggle_user_sort(request):
     user = User.objects.get(username=request.user.username)
     if user.profile.sort_todos_by == "date_added":
@@ -531,6 +546,7 @@ def toggle_user_sort(request):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
+@login_required
 def filter_todos(request, filter_type):
     request.user.profile.filter_todos_by = filter_type
     request.user.save()
@@ -539,6 +555,7 @@ def filter_todos(request, filter_type):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
+@login_required()
 def toggle_dark_mode(request):
     user = User.objects.get(username=request.user.username)
 
@@ -556,6 +573,7 @@ def toggle_dark_mode(request):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
+@login_required
 def delete(request, item_type, pk):
     """
     Universal view function to delete any object from the database
@@ -620,8 +638,13 @@ def delete(request, item_type, pk):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
     
 
-def check_todo(request, title):
-    todo = ToDo.objects.get(title=title)
+@login_required
+def check_todo(request, pk):
+    try:
+        todo = ToDo.objects.get(pk=pk)
+    except:
+        return render(request, "ToDo/restrict_access.html")
+    
     todo.is_checked = True
     todo.date_completed = datetime.datetime.now()
     todo.save()
@@ -634,8 +657,13 @@ def check_todo(request, title):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
+@login_required
 def uncheck_todo(request, pk):
-    todo = ToDo.objects.get(pk=pk)
+    try:
+        todo = ToDo.objects.get(pk=pk, creator=request.user)
+    except:
+        return render(request, "ToDo/restrict_access.html")
+
     todo.is_checked = False
     todo.date_completed = None
     todo.save()
@@ -647,8 +675,17 @@ def uncheck_todo(request, pk):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
-def toggle_subtask(request, title):
-    subtask = SubTask.objects.get(title=title)
+@login_required
+def toggle_subtask(request, pk):
+    try:
+        subtask = SubTask.objects.get(pk=pk)
+        # Security check
+        if subtask.parent_task.creator != request.user:
+            return render(request, "ToDo/restrict_access.html")
+    except:
+        return render(request, "ToDo/restrict_access.html")
+
+    
 
     if subtask.done:
         subtask.done = False
@@ -666,7 +703,7 @@ def toggle_subtask(request, title):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
-class TodoCompletedView(ListView):
+class TodoCompletedView(LoginRequiredMixin, ListView):
     model = ToDo
     template_name = "ToDo/completed.html"
     context_object_name = "todos"

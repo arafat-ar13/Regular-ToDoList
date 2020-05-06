@@ -17,7 +17,7 @@
     <br>
 
     {% if todo.due_date != None %}
-        <p style="font-size: 25px; color: {{ todo.due_date_color }}">Due on: {{ todo.due_date|date:"F d" }} <button onclick="location.href='{% url 'todo-due-remove' todo.title %}'" class="btn btn-outline-danger"><i class="fa fa-trash"></i></button></p>
+        <p style="font-size: 25px; color: {{ todo.due_date_color }}">Due on: {{ todo.due_date|date:"F d" }} <button onclick="location.href='{% url 'todo-due-remove' todo.pk %}'" class="btn btn-outline-danger"><i class="fa fa-trash"></i></button></p>
     {% else %}
         {% if todo.due_date == None %}
             <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample{{ todo.pk }}"
@@ -60,13 +60,13 @@
                             <li style="font-size: 23px;">
                                 <a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a>
                                 <br>
-                                <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" type="button" class="btn btn-outline-success">Check it off</button>
+                                <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" type="button" class="btn btn-outline-success">Check it off</button>
                                 <button onclick="location.href='{% url 'delete-item' 'subtask' subtask.pk %}'" type="submit" class="btn btn-outline-danger">Delete</button> 
                             </li>
                         {% else %}
                             <li style="font-size: 23px;">
                                 <a style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> 
-                                <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Check it off</button> 
+                                <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Check it off</button> 
                                 <button onclick="location.href='{% url 'delete-item' 'subtask' subtask.pk %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> 
                             </li>
                         {% endif %}
@@ -75,15 +75,19 @@
                             <li style="font-size: 23px;">
                                 <a style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a>
                                 <br>
-                                <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" type="button" class="btn btn-outline-success">Uncheck it </button> 
+                                <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" type="button" class="btn btn-outline-success">Uncheck it </button> 
                                 <button onclick="location.href='{% url 'delete-item' 'subtask' subtask.pk %}'" type="submit" class="btn btn-outline-danger">Delete</button> 
                             </li>
                         {% else %}
-                            <li style="font-size: 23px;"><a class="control-subtask" style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.title %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Uncheck it</button> <button onclick="location.href='{% url 'delete-item' 'subtask' subtask.pk %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> </li>
+                            <li style="font-size: 23px;"><a class="control-subtask" style="color:inherit; text-decoration: line-through;" href="{% url 'todo-edit-subtask' subtask.pk %}"> {{ subtask.title }} </a> <button onclick="location.href='{% url 'todo-toggle-subtask' subtask.pk %}'" style="float: right; size:3ch" type="button" class="btn btn-outline-success">Uncheck it</button> <button onclick="location.href='{% url 'delete-item' 'subtask' subtask.pk %}'" style="float: right; size:3ch" type="submit" class="btn btn-outline-danger">Delete</button> </li>
                         {% endif %}
                     {% endif %}
                 </div>
             {% endfor %}
+            {% if percentage != 0 %}
+                <center style="font-size:23px; background-color: burlywood; color: 'black';">Your progress:</center>
+                <center> <span style="font-size:10ch; color:lightseagreen">{{ percentage }}%</span></center>
+            {% endif %}
         </div>
     {% endif %}
 

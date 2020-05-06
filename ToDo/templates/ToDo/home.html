@@ -59,17 +59,17 @@
 
                         {% if todo.has_notes %}
                         <h2>
-                            <button onclick="location.href='{% url 'todo-check' todo.title %}'" class="btn btn-outline-success"><i class="fa fa-check"></i></button> <a style="overflow: hidden; text-overflow: ellipsis;" href="{% url 'todo-detailed' todo.title %}" class="article-title">  {{ todo.title }}</a> <button data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
+                            <button onclick="location.href='{% url 'todo-check' todo.pk %}'" class="btn btn-outline-success"><i class="fa fa-check"></i></button> <a style="overflow: hidden; text-overflow: ellipsis;" href="{% url 'todo-detailed' todo.title todo.pk %}" class="article-title">  {{ todo.title }}</a> <button data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
                             {% if todo.parent_list %}
                                 <p style="color: chartreuse;"> ({{ todo.parent_list.title }}) </p>
                             {% endif %}
                         </h2>
                         {% else %}
                         <h2>
-                            <button onclick="location.href='{% url 'todo-check' todo.title %}'" class="btn btn-outline-success">
+                            <button onclick="location.href='{% url 'todo-check' todo.pk %}'" class="btn btn-outline-success">
                                 <i class="fa fa-check"></i>
                             </button>
-                            <a href="{% url 'todo-detailed' todo.title %}" class="article-title">  {{ todo.title }}</a> 
+                            <a href="{% url 'todo-detailed' todo.title todo.pk  %}" class="article-title">  {{ todo.title }}</a> 
                             <button data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;" class="btn btn-outline-danger">
                                 <i class="fa fa-trash"></i>
                             </button>
@@ -82,12 +82,12 @@
                         {% endif %}
 
                         {% if not todo.important %}
-                        <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.title %}'"
+                        <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'"
                             type="submit" class="btn btn-secondary">
                             <span aria-hidden="true"><i class="fas fa-star"></i></span>
                         </button>
                         {% else %}
-                        <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.title %}'"
+                        <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'"
                             type="submit" class="btn btn-warning">
                             <span aria-hidden="true"><i class="fas fa-star"></i></span>
                         </button>
