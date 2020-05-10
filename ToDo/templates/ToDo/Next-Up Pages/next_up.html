@@ -1,0 +1,33 @@
+{% extends "ToDo/base.html" %}
+{% block content %}
+{% load crispy_forms_tags %}
+
+{% if todos_earlier %}
+    <center><h1 style="font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 5ch; background-color: royalblue;">Earlier</h1></center>
+    <br>
+    {% include "ToDo/Next-Up Pages/todos_earlier.html" with todos=todos_earlier %}
+    <br><br>
+{% endif %}
+
+{% if todos_today %}
+    <center><h1 style="font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 5ch; background-color: royalblue;">For Today</h1></center>
+    <br>
+    {% include "ToDo/Next-Up Pages/todos_today.html" with todos=todos_today %}
+    <br><br>
+{% endif %}
+
+{% if todos_tomorrow %}
+    <center><h1 style="font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 5ch; background-color: royalblue;">For Tomorrow</h1></center>
+    <br>
+    {% include "ToDo/Next-Up Pages/todos_tomorrow.html" with todos=todos_tomorrow %}
+    <br><br>
+{% endif %}
+
+{% if todos_later %}
+    <center><h1 style="font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 5ch; background-color: royalblue;">Coming up later</h1></center>
+    <br>
+    {% include "ToDo/Next-Up Pages/todos_later.html" with todos=todos_later %}
+    <br><br>
+{% endif %}
+
+{% endblock content %}

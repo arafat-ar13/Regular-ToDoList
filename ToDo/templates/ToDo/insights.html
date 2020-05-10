@@ -1,4 +1,4 @@
-{% extends "ToDo/insights_base.html" %}
+{% extends "ToDo/base.html" %}
 {% block content %}
 
 <style>
@@ -6,17 +6,27 @@
         font-family: Georgia, 'Times New Roman', Times, serif;
     }
 
-    {% if request.user_agent.is_mobile %}
-        .important-num-major {
-            font-size: 10ch;
-            color: darkcyan
-        }
-    {% else %}
-        .important-num-major {
-            font-size: 15ch;
-            color: darkcyan
-        }
-    {% endif %}
+        {
+        % if request.user_agent.is_mobile %
+    }
+
+    .important-num-major {
+        font-size: 10ch;
+        color: darkcyan
+    }
+
+        {
+        % else %
+    }
+
+    .important-num-major {
+        font-size: 15ch;
+        color: darkcyan
+    }
+
+        {
+        % endif %
+    }
 
     .important-num-minor {
         font-size: 7ch;
@@ -39,10 +49,10 @@
     function animateValue(id, start, end, duration) {
         var range = end - start;
         var current = start;
-        var increment = end > start? 1 : -1;
+        var increment = end > start ? 1 : -1;
         var stepTime = Math.abs(Math.floor(duration / range));
         var obj = document.getElementById(id);
-        var timer = setInterval(function() {
+        var timer = setInterval(function () {
             current += increment;
             obj.innerHTML = current;
             if (current == end) {
@@ -55,150 +65,195 @@
 
 
 {% if ready == "AI is still learning" %}
-    <div class="content-section stay-tuned dark-mode-assist-section">
-        <h1>
-            The AI is still learning your behavior. Please continue creating and completing tasks.
-            Since you are a new member, please allow 7 days for the system to analyze you. After 7 days
-            from the day you joined, visit this page again.
-        </h1>
+<div class="content-section stay-tuned dark-mode-assist-section">
+    <h1>
+        The AI is still learning your behavior. Please continue creating and completing tasks.
+        Since you are a new member, please allow 7 days for the system to analyze you. After 7 days
+        from the day you joined, visit this page again.
+    </h1>
 
-        <br><br>
-        <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample1" role="button" aria-expanded="false" aria-controls="multiCollapseExample1">What is this page about?</a>
-        <div class="row">
-            <div class="col">
-                <div class="collapse multi-collapse" id="multiCollapseExample1">
+    <br><br>
+    <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample1" role="button"
+        aria-expanded="false" aria-controls="multiCollapseExample1">What is this page about?</a>
+    <div class="row">
+        <div class="col">
+            <div class="collapse multi-collapse" id="multiCollapseExample1">
+                <br>
+                <p1>
+                    This is a special page of this app. This page will be populated with data only once a week.
+                    Insights mean deeper meaning of something. With this page, I have tried to accomplished a system
+                    that will
+                    analyze how you are creating and completing your tasks and then process them and show you a
+                    beautiful representation of
+                    that data on this page.
+                    <br><br>
+                    So basically if you are a new user, this page will take about 7 days to learn about you and to
+                    collect enough data.
+                    Since a week begins on a Monday, this page will be updated every Monday. After visiting this page on
+                    a Monday, the
+                    contents of this page will not change until the next Monday, but during this period the system will
+                    again collect
+                    data about your behavior and process it so that it can present them to you next Monday.
+                    <br><br>
+                    <p><b>So what is it really that you will be seeing here?</b></p>
+                    Every user will be provided with <a style="color: cornflowerblue">three</a> sorts of insights for
+                    now.
                     <br>
-                    <p1>
-                        This is a special page of this app. This page will be populated with data only once a week.
-                        Insights mean deeper meaning of something. With this page, I have tried to accomplished a system that will
-                        analyze how you are creating and completing your tasks and then process them and show you a beautiful representation of
-                        that data on this page.
-                        <br><br>
-                        So basically if you are a new user, this page will take about 7 days to learn about you and to collect enough data.
-                        Since a week begins on a Monday, this page will be updated every Monday. After visiting this page on a Monday, the
-                        contents of this page will not change until the next Monday, but during this period the system will again collect
-                        data about your behavior and process it so that it can present them to you next Monday.
-                        <br><br>
-                        <p><b>So what is it really that you will be seeing here?</b></p>
-                        Every user will be provided with <a style="color: cornflowerblue">three</a> sorts of insights for now.
-                        <br>
-                        Well, any user, regardless of if they have created any tasks this week or not, will be provided with a basic
-                        insight that is that they will be able to see how many tasks they have created and completed since the day they joined
-                        the app
-                        <br>
-                        Secondly, if the person was productive and created and completed many tasks since the last Monday, then they will also see
-                        how many tasks they have created and how many they have actually completed among those.
-                        <br>
-                        Also, if some of the tasks that you created this week had any due dates, and you completed those tasks within
-                        the due date (congrats btw) then you will also see how many tasks you have completed this week ON TIME!
-                        <br><br>
-                        <b>But what if I created my account on a day that was not a Monday?</b>
-                        <br>
-                        Well this can happen. If a user created their account on a Monday, then it's just miraculously perfect, they
-                        will manage their tasks all week and the system will take 7 days to process data and their Insights Page will
-                        be available next Monday. But if someone created their account on a day that was not a Monday, then a special request
-                        will be made and the Insights will be generated instantly after 7 days from the creation date though with LESS data.
-                        What I mean is, if someone created their account on a Wednesday, then on the next Wednesday they will see Insights about
-                        their behavior till the previous Monday. Let's say 13th is a Wednesday and someone created their account and 20th is the next Wednesday. So on 20th, the user
-                        will see data that they created FROM 11th (a Monday, yes your todos for those two days will be zero) UPTO 18th
-                        which is a Monday. So actually the tasks created since 13th UPTO 18th will be analyzed and generated on 20th.
-                        Keep in mind 20th is not a Monday but still the data is being generated, that's why this is a special request.
-                        So 20th is a Wednesday, what now? Now, on the next Monday which is 25th, the user will get new generated data as usual. This time
-                        they will see data FROM 18th UPTO 25th. Hope you get the idea. If you don't, dont fuss about it. Keep doing what you are doing
-                        and visit this page every Monday if possible and you shall see some interesting numbers.
-                        <br>
-                        This is the last feature that I will be developing for this app. Thanks everyone who uses the app.
-                    </p1>
-                </div>
+                    Well, any user, regardless of if they have created any tasks this week or not, will be provided with
+                    a basic
+                    insight that is that they will be able to see how many tasks they have created and completed since
+                    the day they joined
+                    the app
+                    <br>
+                    Secondly, if the person was productive and created and completed many tasks since the last Monday,
+                    then they will also see
+                    how many tasks they have created and how many they have actually completed among those.
+                    <br>
+                    Also, if some of the tasks that you created this week had any due dates, and you completed those
+                    tasks within
+                    the due date (congrats btw) then you will also see how many tasks you have completed this week ON
+                    TIME!
+                    <br><br>
+                    <b>But what if I created my account on a day that was not a Monday?</b>
+                    <br>
+                    Well this can happen. If a user created their account on a Monday, then it's just miraculously
+                    perfect, they
+                    will manage their tasks all week and the system will take 7 days to process data and their Insights
+                    Page will
+                    be available next Monday. But if someone created their account on a day that was not a Monday, then
+                    a special request
+                    will be made and the Insights will be generated instantly after 7 days from the creation date though
+                    with LESS data.
+                    What I mean is, if someone created their account on a Wednesday, then on the next Wednesday they
+                    will see Insights about
+                    their behavior till the previous Monday. Let's say 13th is a Wednesday and someone created their
+                    account and 20th is the next Wednesday. So on 20th, the user
+                    will see data that they created FROM 11th (a Monday, yes your todos for those two days will be zero)
+                    UPTO 18th
+                    which is a Monday. So actually the tasks created since 13th UPTO 18th will be analyzed and generated
+                    on 20th.
+                    Keep in mind 20th is not a Monday but still the data is being generated, that's why this is a
+                    special request.
+                    So 20th is a Wednesday, what now? Now, on the next Monday which is 25th, the user will get new
+                    generated data as usual. This time
+                    they will see data FROM 18th UPTO 25th. Hope you get the idea. If you don't, dont fuss about it.
+                    Keep doing what you are doing
+                    and visit this page every Monday if possible and you shall see some interesting numbers.
+                    <br>
+                    This is the last feature that I will be developing for this app. Thanks everyone who uses the app.
+                </p1>
             </div>
         </div>
-
     </div>
+
+</div>
 
 {% elif ready == "show content" %}
 
-    <div class="full-content">
-        <div>
-            <center><h1 style="font-size:8ch; color:orange; font-family:Consolas">{{ week_range }}</h1></center>
-        </div>
-        <br><br><br>
-        <div class="content-section dark-mode-assist-section">
-            <center>
-                <h1>Since the day you became a user of this app, you created: <br><b id="total" class="important-num-major"><script>animateValue("total", 0, {{ user.profile.total_todos }}, 5000)</script></b> todos</h1>
-                <h1>And you completed: <span id="js-caller" class="important-num-minor"><script>subtract({{ user.profile.total_todos }}, {{ user.profile.todos }}, "js-caller")</script></span> of them! Wow!</h1>
-            </center>
-            <small style="color: green;">Tip: This insight will update every time you complete or create tasks</small>
+<div class="full-content">
+    <div>
+        <center>
+            <h1 style="font-size:8ch; color:orange; font-family:Consolas">{{ week_range }}</h1>
+        </center>
+    </div>
+    <br><br><br>
+    <div class="content-section dark-mode-assist-section">
+        <center>
+            <h1>Since the day you became a user of this app, you created: <br><b id="total" class="important-num-major">
+                    <script>animateValue("total", 0, {{ user_total_todos }}, 5000)</script></b> todos</h1>
+            <h1>And you completed: <span id="js-caller" class="important-num-minor">
+                    <script>subtract({{ user_total_todos }}, {{ user_active_todos }}, "js-caller")</script></span> of
+                them! Wow!</h1>
+        </center>
+        <small style="color: green;">Tip: This insight will update every time you complete or create tasks</small>
+        <br>
+        <small style="color: red;">Tip: If you are inactivate in using the app, your data on this page may be affected
+            in a bad way</small>
+    </div>
+
+    {% if user.profile.todos_created_this_week != 0 %}
+    <div class="content-section dark-mode-assist-section">
+        <center>
+            <h1>This week you created: <br><b id="id-1" class="important-num-major">
+                    <script>animateValue("id-1", 0, {{ user.profile.todos_created_this_week }}, 2000)</script></b> todos
+            </h1>
+            <h1>And you completed: <b id="id-2" class="important-num-minor">
+                    <script>animateValue("id-2", 0, {{ user.profile.todos_completed_this_week }}, 2000)</script></b> of
+                them!!</h1>
+
             <br>
-            <small style="color: red;">Tip: If you are inactivate in using the app, your data on this page may be affected in a bad way</small>
-        </div>
+            <h3>
+                By analyzing you, the AI has said that you
+                were about <br><b id="efficiency" class="important-num-major">
+                    <script>animateValue("efficiency", 0, {{ user.profile.efficiency_this_week }}, 4000)</script>
+                </b>%<br> efficient this week
+            </h3>
+            <br>
+            {% if user.profile.efficiency_change != 0 %}
+            {% if user.profile.efficiency_change_type == "Positive" %}
+            <h3>Congrats! You were more efficient this week than last week. Up by {{ user.profile.efficiency_change }}%
+            </h3>
 
-        {% if user.profile.todos_created_this_week != 0 %}
-            <div class="content-section dark-mode-assist-section">
-                <center>
-                    <h1>This week you created: <br><b id="id-1" class="important-num-major"><script>animateValue("id-1", 0, {{ user.profile.todos_created_this_week }}, 2000)</script></b> todos</h1>
-                    <h1>And you completed: <b id="id-2" class="important-num-minor"><script>animateValue("id-2", 0, {{ user.profile.todos_completed_this_week }}, 2000)</script></b> of them!!</h1>
+            {% elif user.profile.efficiency_change_type == "Negative" %}
+            <h3>Dang! Last week was more efficient than this week. Try harder! Down by
+                {{ user.profile.efficiency_change }}%</h3>
 
-                    <br>
-                    <h3>
-                        By analyzing you, the AI has said that you
-                        were about <br><b id="efficiency" class="important-num-major"><script>animateValue("efficiency", 0, {{ user.profile.efficiency_this_week }}, 4000)</script></b>%<br> efficient this week
+            {% elif user.profile.efficiency_change_type == "Same" %}
+            <h3>You were as efficient this week as you were last week. Keep it up!</h3>
+
+            {% endif %}
+            {% endif %}
+        </center>
+    </div>
+    {% endif %}
+
+    <br>
+    {% if user.profile.todos_completed_on_time != 0 %}
+    <div class="content-section dark-mode-assist-section">
+        <center>
+            <h1>This week you completed <br><b id='id-3' class="important-num-major">
+                    <script>animateValue("id-3", 0, {{ user.profile.todos_completed_on_time }}, 100)</script></b><br>
+                todos just on time! Yay!</h1>
+        </center>
+    </div>
+    {% endif %}
+
+    {% if user.profile.todos_completed_created_long_ago != 0 %}
+    <div class="content-section dark-mode-assist-section">
+        <center>
+            <h1>
+                This week you completed <br><b id="id-4" class="important-num-major">
+                    <script>animateValue("id-4", 0, {{ user.profile.todos_completed_created_long_ago }}, 100)</script>
+                </b><br>
+                todos that you created long before but couldn't find time to complete but this week you did! Awesome!!
+            </h1>
+        </center>
+    </div>
+    {% endif %}
+
+    <br>
+    {% if user.profile.todos_created_this_week == 0 or user.profile.todos_completed_on_time == 0 or user.profile.todos_completed_created_long_ago == 0%}
+    <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample2" role="button"
+        aria-expanded="false" aria-controls="multiCollapseExample2">You are seeing less data than you should.<br>Find
+        out more here</a>
+    <div class="row">
+        <div class="col">
+            <div class="collapse multi-collapse" id="multiCollapseExample2">
+                <br>
+                <div class="card card-body dark-mode-assist-section">
+                    <h3 class="text-muted">
+                        You are seeing less Insights than you should. Probably today is not Monday. If such is the case,
+                        check next Monday
+                        for some more fresh data. Or maybe today is Monday but you were not so productive last week.
+                        Don't worry, be more
+                        productive this week and we'll surely give you more Insights next Monday :)
                     </h3>
-                    <br>
-                    {% if user.profile.efficiency_change != 0 %}
-                        {% if user.profile.efficiency_change_type == "Positive" %}
-                            <h3>Congrats! You were more efficient this week than last week. Up by {{ user.profile.efficiency_change }}%</h3>
-
-                        {% elif user.profile.efficiency_change_type == "Negative" %}
-                            <h3>Dang! Last week was more efficient than this week. Try harder! Down by {{ user.profile.efficiency_change }}%</h3>
-
-                        {% elif user.profile.efficiency_change_type == "Same" %}
-                            <h3>You were as efficient this week as you were last week. Keep it up!</h3>
-
-                        {% endif %}
-                    {% endif %}
-                </center>
-            </div>
-        {% endif %}
-
-        <br>
-        {% if user.profile.todos_completed_on_time != 0 %}
-            <div class="content-section dark-mode-assist-section">
-                <center>
-                    <h1>This week you completed <br><b id='id-3' class="important-num-major"><script>animateValue("id-3", 0, {{ user.profile.todos_completed_on_time }}, 100)</script></b><br> todos just on time! Yay!</h1>
-                </center>
-            </div>
-        {% endif %}
-
-        {% if user.profile.todos_completed_created_long_ago != 0 %}
-            <div class="content-section dark-mode-assist-section">
-                <center>
-                    <h1>
-                        This week you completed <br><b id="id-4" class="important-num-major"><script>animateValue("id-4", 0, {{ user.profile.todos_completed_created_long_ago }}, 100)</script></b><br>
-                        todos that you created long before but couldn't find time to complete but this week you did! Awesome!!
-                    </h1>
-                </center>
-            </div>
-        {% endif %}
-
-        <br>
-        {% if user.profile.todos_created_this_week == 0 or user.profile.todos_completed_on_time == 0 or user.profile.todos_completed_created_long_ago == 0%}
-            <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample2" role="button" aria-expanded="false" aria-controls="multiCollapseExample2">You are seeing less data than you should.<br>Find out more here</a>
-            <div class="row">
-                <div class="col">
-                    <div class="collapse multi-collapse" id="multiCollapseExample2">
-                        <br>
-                        <div class="card card-body dark-mode-assist-section">
-                            <h3 class="text-muted">
-                                You are seeing less Insights than you should. Probably today is not Monday. If such is the case, check next Monday
-                                for some more fresh data. Or maybe today is Monday but you were not so productive last week. Don't worry, be more
-                                productive this week and we'll surely give you more Insights next Monday :)
-                            </h3>
-                        </div>
-                    </div>
                 </div>
             </div>
-        {% endif %}
+        </div>
     </div>
+    {% endif %}
+</div>
 
 {% endif %}
 

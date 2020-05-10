@@ -22,6 +22,10 @@ class ToDoNotesForm(forms.Form):
     task_notes = forms.CharField(widget=forms.Textarea, help_text="Add anything that's important to the task", strip=False)
 
 
+class SearchForm(forms.Form):
+    query = forms.CharField(max_length=65, help_text="Search everything")
+
+
 class ContactMeForm(forms.Form):
     CONTACT_CHOICES = (
         ("0", "Choose one"),

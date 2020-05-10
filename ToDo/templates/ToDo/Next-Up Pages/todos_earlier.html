@@ -1,0 +1,6 @@
+{% extends "ToDo/Next-Up Pages/next_up_generic.html" %}
+{% block due %}
+<h3 style="color:red">
+    Was due on: {{ todo.due_date|date:"F d" }}
+</h3>
+{% endblock due %}

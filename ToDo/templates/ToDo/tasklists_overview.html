@@ -8,7 +8,7 @@
     }
 </style>
 
-<h1>Welcome to your lists! View your lists below</h1>
+<h1>Welcome, {{ request.user.username }}</h1>
 
 <br>
 <form method="POST">
@@ -22,10 +22,33 @@
     </div>
 </form>
 
+<button onclick="location.href='{% url 'search' %}'" style="font-size:3ch; float: right;" class="btn btn-outline-warning">Search everything <i class="fa fa-search"></i></button>
+
+<br><br><br><br><br>
+<center><h2 style="font-size:6ch; font-style: oblique;">Get to work</h2></center>
+<br>
 <div class="content-section">
     <ul class="list-group">
+        <li class="list-group-item dark-mode-assist-section big-list-item colorful-list-items ">
+            <a style="color:inherit; text-decoration: none;" href="{% url 'todo-important' %}">Important Tasks</a>
+        </li>
+        <li class="list-group-item dark-mode-assist-section big-list-item colorful-list-items ">
+            <a style="color:inherit; text-decoration: none;" href="{% url 'todo-next-up' %}">Next up for you</a>
+        </li>
+    </ul>
+</div>
+
+
+<br><br><br>
+<center><h2 style="font-size:6ch; font-style: oblique;">Your Lists:</h2></center>
+<br>
+<div class="content-section">
+    <ul class="list-group">
+        <li class="list-group-item dark-mode-assist-section big-list-item colorful-list-items">
+            <a style="color:inherit; text-decoration: none; font-size:3ch; color:tomato" href="{% url 'tasklist-single-view-default' 'tasks' %}">Tasks</a>
+        </li>
         {% for user_list in user_lists %}
-            <li class="list-group-item dark-mode-assist-section big-list-item">
+            <li class="list-group-item dark-mode-assist-section big-list-item colorful-list-items">
                 <a style="color:inherit; text-decoration: none;" href="{% url 'tasklist-single-view' user_list.title user_list.pk %}">{{ user_list }}</a>
                 <button data-toggle="modal" data-target="#exampleModalCenter{{ user_list.pk }}" style="float: right;" class="btn btn-outline-danger">
                     <i class="fa fa-trash"></i>

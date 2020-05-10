@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
-from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm, ContactMeForm, NewTaskListForm
+from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm, ContactMeForm, NewTaskListForm, SearchForm
 
 import datetime
 import calendar
@@ -21,127 +21,51 @@ def handler404(request, *args):
     return render(request, 'ToDo/Error Pages/500.html', status=404)
 
 
-def home(request):
+
+@login_required
+def search(request):
+    results = []
+
     if request.method == "POST":
-        add_form = NewTaskForm(request.POST)
+        search_form = SearchForm(request.POST)
 
-        if add_form.is_valid():
-            title = add_form.cleaned_data.get("title")
-            todo = ToDo(title=title)
+        if search_form.is_valid():
+            search_query = search_form.cleaned_data.get("query")
+            user_todos = ToDo.objects.filter(creator=request.user)
 
-            if request.POST.get('options') != "unlisted":
-                # Getting the user requested tasklist
-                todo.parent_list = TaskList.objects.get(pk=request.POST.get("options"))
-                todo.parent_list.num_of_tasks += 1
-                todo.parent_list.save()
+            matching_tasks = ToDo.objects.filter(title__icontains=search_query, creator=request.user)
+            matching_lists = TaskList.objects.filter(title__icontains=search_query, owner=request.user)
 
-            todo.creator = request.user
-
-            todo.save()
-
-            user = User.objects.get(username=request.user.username)
-            user.profile.todos += 1
-            user.profile.total_todos += 1
-            user.save()
-            messages.success(request, "Your new task has been added")
-
-            return redirect("todo-home")
+            matching_subtasks = []
+            for subtask in SubTask.objects.filter(title__icontains=search_query):
+                if subtask.parent_task in user_todos:
+                    matching_subtasks.append(subtask)
+            
+            matching_notes = []
+            for note in Notes.objects.filter(content__icontains=search_query):
+                if note.parent_task in user_todos:
+                    matching_notes.append(note)
+            
+            results = {
+                "matching_tasks": matching_tasks, 
+                "matching_lists": matching_lists, 
+                "matching_subtasks": matching_subtasks, 
+                "matching_notes": matching_notes
+            }
+            
+            if len(matching_tasks) == 0 and len(matching_subtasks) == 0 and len(matching_lists) == 0 and len(matching_notes) == 0:
+                results = "got nothing"
 
     else:
-        add_form = NewTaskForm()
-
-    todos = ToDo()
-    tasklists = TaskList()
-
-    
-    if request.user.is_authenticated:
-        tasklists = TaskList.objects.filter(owner=request.user)
-
-        # Checking today's date and comparing colors of due dates
-        today = datetime.datetime.now(datetime.timezone.utc)
-        user_todos = ToDo.objects.filter(creator=request.user)
-
-        for todo in user_todos:
-            if todo.due_date is not None:
-                if todo.due_date.day == today.day:
-                    todo.due_date_color = "blue"
-                elif todo.due_date > today:
-                    todo.due_date_color = "green"
-                elif todo.due_date < today:
-                    todo.due_date_color = "red"
-
-                todo.save()
-
-        todos = user_todos
-
-        # Handling how the user's tasks should be sorted
-        user = User.objects.get(username=request.user.username)
-        if user.profile.sort_todos_by == "date_added":
-
-            # The code below handles how the tasks should be filtered when they are sorted by "date_added"
-            if user.profile.filter_todos_by == "important_todos":
-                todos = user_todos.filter(important=True).order_by("-date_created")
-
-            elif user.profile.filter_todos_by == "due_date_todos":
-                todos = []
-                for todo in user_todos.all():
-                    if todo.due_date is not None:
-                        todos.append(todo)
-
-                todos.reverse()
-
-
-            elif user.profile.filter_todos_by == "all_todos":
-                todos = user_todos.order_by("-date_created")
-
-        elif user.profile.sort_todos_by == "due_date":
-            due_todos = []
-            normal_todos = []
-
-            for todo in user_todos.order_by("due_date"):
-                if todo.due_date is not None:
-                    due_todos.append(todo)
-
-            for todo in user_todos.order_by("-date_created"):
-                if todo.due_date is None:
-                    normal_todos.append(todo)
-
-            todos = due_todos + normal_todos
-            filtered_todos = []
-
-            if user.profile.filter_todos_by == "important_todos":
-                for todo in todos:
-                    if todo.important:
-                        filtered_todos.append(todo)
-
-                todos = filtered_todos
-
-            elif user.profile.filter_todos_by == "due_date_todos":
-                todos = due_todos
-
-        # Enabling user's Insights Page
-        if not user.profile.insights_enabled:
-            if (today.date() - user.date_joined.date()).days >= 7:
-                user.profile.insights_enabled = True
-                previous_monday = (today - datetime.timedelta(days=today.weekday())) - datetime.timedelta(days=7)
-                user.profile.last_insights_date = previous_monday.date()
-                user.save()
-
-        # Allowing users to have their Insights Page this week if they haven't already
-        if user.profile.insights_enabled:
-            if (today.date() - user.profile.last_insights_date).days >= 7:
-                user.profile.generated_insights_this_week = False
-                user.save()
-
+        search_form = SearchForm()
 
     context = {
-        "todos": todos,
-        "tasklists": tasklists,
-        "add_form": add_form,
+        "search_form": search_form,
+        "title": "Search",
+        "results": results
     }
 
-    return render(request, "ToDo/home.html", context=context)
-
+    return render(request, "ToDo/search_page.html", context=context)
 
 @login_required
 def todo_detail(request, title, pk):
@@ -310,138 +234,6 @@ def about(request):
 
 
 @login_required
-def render_insights(request):
-    """
-    This is a function that will analyze the user behavior and calculate how well they are managing their tasks
-    In this function, we are going to convert all the DateTime objects to Date objects just for the sake for
-    better comparision.
-    Although DateTime objects offer better precision as they also have time but for this function to properly analyze how many
-    tasks are being created and completed, just comparing the dates is more precise since DateTime objects will not show a whole new
-    day unless the hour of the day matches too. For this function, it must be called as soon as it is Monday and it's past 7 days
-    since the user's previous insights date. Also, todos created and completed on the last minute will also be considered by the AI
-    if we use only dates.
-    """
-
-    today = datetime.datetime.now(datetime.timezone.utc)
-    user = User.objects.get(username=request.user.username)
-    user_todos = ToDo.objects.filter(creator=request.user)
-
-    # Creating a ordinal indicator function
-    def determine_ordinal(date):
-        if (date >= 4 and date <= 20) or (date >= 24 and date <= 30):
-            ordinal = "th"
-        elif date == 1 or (date % 10) == 1:
-            ordinal = "st"
-        elif date == 2 or (date % 10) == 2:
-            ordinal = "nd"
-        elif date == 3 or (date % 10) == 3:
-            ordinal = "rd"
-
-        num_with_ordinal = str(date) + ordinal
-        return num_with_ordinal
-
-    if user.profile.insights_enabled:
-        # We'll determine if a whole week has passed since the user got their previous insights page
-        if (today.date() - user.profile.last_insights_date).days >= 7 and not user.profile.generated_insights_this_week:
-            # First, how many tasks they added this week and how many they actually completed
-            todos_created_this_week = []
-            todos_completed_this_week = []
-
-            for todo in user_todos:
-                # The user can visit the Insights Page even after Monday, so we need to make sure that the function works as planned
-                if calendar.day_name[today.weekday()] == "Monday":
-                    date_ranger = today.date()
-                else:
-                    # If today is not a Monday (that means that the user has visited the place after Monday), we'll analyze todos till the last Monday
-                    date_ranger = (today - datetime.timedelta(days=today.weekday())).date()
-
-                if (date_ranger - todo.date_created.date()).days <= 7:
-                    todos_created_this_week.append(todo)
-                    if todo.is_checked:
-                        todos_completed_this_week.append(todo)
-
-            user.profile.todos_created_this_week = len(todos_created_this_week)
-            user.profile.todos_completed_this_week = len(todos_completed_this_week)
-            user.save()
-
-            # Calculating user efficiency this week and if possible comparing with last week's
-            efficiency_change = False
-            if user.profile.efficiency_this_week != 0:
-                # If we access user efficiency now, it'll still be the efficiency of last week's because we didn't modify it yet
-                efficiency_last_week = user.profile.efficiency_this_week
-                efficiency_change = True
-
-            try:
-                user.profile.efficiency_this_week = int((user.profile.todos_completed_this_week / user.profile.todos_created_this_week) * 100)
-            except ZeroDivisionError:
-                user.profile.efficiency_this_week = 0
-            user.save()
-
-            # So if an efficiency change exists, we'll see if this is an improvement or not
-            if efficiency_change:
-                if user.profile.efficiency_this_week > efficiency_last_week:
-                    efficiency = ("Positive", user.profile.efficiency_this_week - efficiency_last_week)
-
-                elif user.profile.efficiency_this_week == efficiency_last_week:
-                    efficiency = ("Same", None)
-
-                else:
-                    efficiency = ("Negative", efficiency_last_week - user.profile.efficiency_this_week)
-
-                user.profile.efficiency_change = efficiency[1]
-                user.profile.efficiency_change_type = efficiency[0]
-                user.save()
-
-            # Second, how many tasks they added this week and completed ON TIME (by due date), IF their tasks had at least one due date
-            todos_with_due_dates = [todo for todo in todos_completed_this_week if todo.due_date is not None]
-            if todos_with_due_dates:
-                todos_completed_on_time = []
-                for todo in todos_with_due_dates:
-                    if todo.date_completed.date() <= todo.due_date.date():
-                        todos_completed_on_time.append(todo)
-
-                user.profile.todos_completed_on_time = len(todos_completed_on_time)
-
-            else:
-                user.profile.todos_completed_on_time = 0
-
-            # We also want to calculate how many tasks they completed this week that they created long before this week
-            todos_completed_but_created_long_ago = []
-            for todo in user_todos:
-                if todo.date_completed is not None:
-                    if (date_ranger - todo.date_completed.date()).days <= 7 and todo not in todos_created_this_week:
-                        todos_completed_but_created_long_ago.append(todo)
-
-            user.profile.todos_completed_created_long_ago = len(todos_completed_but_created_long_ago)
-
-            user.profile.last_insights_date = date_ranger
-            user.profile.generated_insights_this_week = True
-            user.save()
-
-            ready = "show content"
-
-        else:
-            ready = "show content"
-
-        week_range = f"""
-        This is your data from {determine_ordinal((user.profile.last_insights_date-datetime.timedelta(days=7)).day)}
-        {calendar.month_name[(user.profile.last_insights_date-datetime.timedelta(days=7)).month]} till
-        {determine_ordinal(user.profile.last_insights_date.day)} {calendar.month_name[user.profile.last_insights_date.month]}
-        """
-
-    else:
-        ready = "AI is still learning"
-
-    context = {
-        "ready": ready,
-        "title": "Insights",
-        "week_range": week_range
-    }
-
-    return render(request, "ToDo/insights.html", context=context)
-
-
-@login_required
 def view_taskslists(request):
     user_lists = TaskList.objects.filter(owner=request.user)
 
@@ -451,12 +243,16 @@ def view_taskslists(request):
         if list_form.is_valid():
             list_title = list_form.cleaned_data.get("title")
 
+            if list_title == "Tasks" or list_title == "tasks":
+                messages.info(request, "Sorry, this is a reserved name")
+                return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
             new_list = TaskList(title=list_title)
             new_list.owner = request.user
             new_list.save()
 
             messages.success(request, "Your shiny new list is ready to be used")
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+            return redirect("tasklist-single-view", list_title, new_list.pk)
     
     else:
         list_form = NewTaskListForm()
@@ -471,13 +267,29 @@ def view_taskslists(request):
 
 
 @login_required
-def tasklist_single_view(request, title, pk):
-    try:
-        tasklist = TaskList.objects.get(title=title, pk=pk, owner=request.user)
-    except:
-        return render(request, "ToDo/restrict_access.html")
+def tasklist_single_view(request, title, pk=None, **kwargs):
+    if title == "tasks":
+        todos = ToDo.objects.filter(creator=request.user, parent_list=None).order_by("-date_created")
+        tasklist = "Tasks"
 
-    todos = ToDo.objects.filter(parent_list=tasklist, is_checked=False)
+    else:
+        try:
+            tasklist = TaskList.objects.get(title=title, pk=pk, owner=request.user)
+        except:
+            return render(request, "ToDo/restrict_access.html")
+
+
+        todos = ToDo.objects.filter(parent_list=tasklist, creator=request.user).order_by("-date_created")
+
+
+    no_todos = False
+    if len([todo for todo in todos if not todo.is_checked]) == 0:
+        no_todos = True
+
+    show_completed = True
+    if len([todo for todo in todos if todo.is_checked]) == 0:
+        show_completed = False
+
 
     if request.method == "POST":
         add_form = NewTaskForm(request.POST)
@@ -487,13 +299,11 @@ def tasklist_single_view(request, title, pk):
             todo = ToDo(title=task_title)
             
             todo.creator = request.user
-            request.user.profile.todos += 1
-            request.user.profile.total_todos += 1
-            request.user.save()
 
-            todo.parent_list = TaskList.objects.get(title=title, owner=request.user)
-            todo.parent_list.num_of_tasks += 1
-            todo.parent_list.save()
+            if title != "tasks":
+                todo.parent_list = TaskList.objects.get(title=title, owner=request.user)
+                todo.parent_list.num_of_tasks += 1
+                todo.parent_list.save()
 
             todo.save()
 
@@ -508,6 +318,8 @@ def tasklist_single_view(request, title, pk):
         "tasklist": tasklist,
         "todos": todos,
         "add_form": add_form,
+        "no_todos": no_todos,
+        "show_completed": show_completed,
         "title": title
     }
 
@@ -530,29 +342,6 @@ def toggle_important_task(request, pk):
     messages.success(request, message)
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
-
-@login_required()
-def toggle_user_sort(request):
-    user = User.objects.get(username=request.user.username)
-    if user.profile.sort_todos_by == "date_added":
-        user.profile.sort_todos_by = "due_date"
-    else:
-        user.profile.sort_todos_by = "date_added"
-
-    user.save()
-
-    messages.success(request, "Your sort order altered")
-
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-
-@login_required
-def filter_todos(request, filter_type):
-    request.user.profile.filter_todos_by = filter_type
-    request.user.save()
-
-    messages.success(request, "Your tasks are now filtered accordingly")
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
 @login_required()
@@ -584,15 +373,8 @@ def delete(request, item_type, pk):
         except:
             return render(request, "ToDo/restrict_access.html")
 
-        if not todo.is_checked:
-            request.user.profile.todos -= 1
-
-        request.user.profile.total_todos -= 1
-        request.user.save()
-
         todo.delete()
     
-        
     elif item_type == "subtask":
         subtask = SubTask.objects.get(pk=pk)
 
@@ -624,12 +406,6 @@ def delete(request, item_type, pk):
         
         # Delete child todos from the database
         for todo in ToDo.objects.filter(parent_list=tasklist):
-            if not todo.is_checked:
-                request.user.profile.todos -= 1
-
-            request.user.profile.total_todos -= 1
-            request.user.save()
-
             todo.delete()
 
         tasklist.delete()
@@ -639,39 +415,20 @@ def delete(request, item_type, pk):
     
 
 @login_required
-def check_todo(request, pk):
-    try:
-        todo = ToDo.objects.get(pk=pk)
-    except:
-        return render(request, "ToDo/restrict_access.html")
-    
-    todo.is_checked = True
-    todo.date_completed = datetime.datetime.now()
-    todo.save()
-    messages.success(request, "Sweeet! Congrats!!")
-
-    user = User.objects.get(username=request.user.username)
-    user.profile.todos -= 1
-    user.save()
-
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-
-@login_required
-def uncheck_todo(request, pk):
+def toggle_todo(request, pk):
     try:
         todo = ToDo.objects.get(pk=pk, creator=request.user)
     except:
         return render(request, "ToDo/restrict_access.html")
+    
+    if todo.is_checked:
+        todo.is_checked = False
+        todo.date_completed = None
+    else:
+        todo.is_checked = True
+        todo.date_completed = datetime.datetime.now()
 
-    todo.is_checked = False
-    todo.date_completed = None
     todo.save()
-
-    user = User.objects.get(username=request.user.username)
-    user.profile.todos += 1
-    user.save()
-
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
@@ -703,17 +460,66 @@ def toggle_subtask(request, pk):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
-class TodoCompletedView(LoginRequiredMixin, ListView):
+class TodoImportantView(LoginRequiredMixin, ListView):
     model = ToDo
-    template_name = "ToDo/completed.html"
+    template_name = "ToDo/important_tasks.html"
     context_object_name = "todos"
     ordering = ["-date_created"]
+
+    def get_queryset(self):
+        query_set = ToDo.objects.filter(creator=self.request.user, important=True, is_checked=False)
+
+        return query_set
+
+
+class ToDoNextUpView(LoginRequiredMixin, ListView):
+    model = ToDo
+    template_name = "ToDo/Next-Up Pages/next_up.html"
+    ordering = ["-due_date"]
+    context_object_name = "todos"
+
+    def get_queryset(self):
+        query_set = []
+        for todo in ToDo.objects.filter(creator=self.request.user, is_checked=False):
+            if todo.due_date is not None:
+                query_set.append(todo)
+
+        return query_set
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = datetime.datetime.now(datetime.timezone.utc)
+        tomorrow = today + datetime.timedelta(days=1)
+
+        todos_earlier = []
+        todos_today = []
+        todos_tomorrow = []
+        todos_later = []
+
+        for todo in ToDo.objects.filter(creator=self.request.user, is_checked=False):
+            if todo.due_date is not None:
+                if todo.due_date.day == today.day and todo.due_date.month == today.month and todo.due_date.year == today.year:
+                    todos_today.append(todo)
+                elif todo.due_date.day == tomorrow.day and todo.due_date.month == tomorrow.month and todo.due_date.year == tomorrow.year:
+                    todos_tomorrow.append(todo)
+                elif todo.due_date < today:
+                    todos_earlier.append(todo)
+                elif todo.due_date > tomorrow:
+                    todos_later.append(todo)
+
+        context["todos_earlier"] = todos_earlier
+        context["todos_today"] = todos_today
+        context["todos_tomorrow"] = todos_tomorrow
+        context["todos_later"] = todos_later
+
+
+        return context
 
 
 class TodoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = ToDo
     fields = ["title"]
-    success_url = reverse_lazy("todo-home")
+    template_name = "ToDo/Form Pages/todo_form.html"
 
     # Checking if the correct user is accessing their tasks
     def test_func(self):
@@ -731,11 +537,17 @@ class TodoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         messages.info(self.request, "Your task has been edited")
         return super().form_valid(form)
 
+    def get_success_url(self):
+        todo = ToDo.objects.get(pk=self.kwargs.get("pk"))
+
+        return reverse("todo-detailed", kwargs={'title': todo.title, 'pk': todo.pk})
+
 
 class SubtaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = SubTask
     fields = ["title"]
     success_url = reverse_lazy("todo-home")
+    template_name = "ToDo/Form Pages/subtask_form.html"
 
     # Checking if the correct user is accessing their tasks
     def test_func(self):
@@ -754,11 +566,17 @@ class SubtaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
         return super().form_valid(form)
 
+    def get_success_url(self):
+        subtask = SubTask.objects.get(pk=self.kwargs.get("pk"))
+
+        return reverse("todo-detailed", kwargs={'title': subtask.parent_task.title, 'pk': subtask.parent_task.pk})
+
 
 class ToDoNotesUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Notes
     fields = ["content"]
     success_url = reverse_lazy("todo-home")
+    template_name = "ToDo/Form Pages/notes_form.html"
 
     # Checking if the correct user is accessing their tasks
     def test_func(self):
@@ -777,3 +595,36 @@ class ToDoNotesUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         messages.info(self.request, "Your notes have been edited")
 
         return super().form_valid(form)
+
+    def get_success_url(self):
+        note = Notes.objects.get(pk=self.kwargs.get("pk"))
+
+        return reverse("todo-detailed", kwargs={'title': note.parent_task.title, 'pk': note.parent_task.pk})
+
+
+class TaskListUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = TaskList
+    fields = ["title"]
+    template_name = "ToDo/Form Pages/tasklist_form.html"
+
+    # Checking for security
+    def test_func(self):
+        try:
+            tasklist = TaskList.objects.get(pk=self.kwargs.get("pk"))
+            return True if tasklist.owner == self.request.user else False
+        except:
+            False
+    
+    def handle_no_permission(self):
+        return render(self.request, "ToDo/restrict_access.html")
+
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        messages.info(self.request, "Your task list was updated")
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        tasklist = TaskList.objects.get(pk=self.kwargs.get("pk"))
+
+        return reverse("tasklist-single-view", kwargs={'title': tasklist.title, 'pk': tasklist.pk})

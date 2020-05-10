@@ -5,12 +5,7 @@ from PIL import Image
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.ImageField(default="default.jpg", upload_to="profile_pics")
-    todos = models.IntegerField(default=0)
-    has_dark_mode = models.BooleanField(default=False)
-    sort_todos_by = models.CharField(max_length=100, default="date_added")
-    total_todos = models.IntegerField(default=0)
-    filter_todos_by = models.CharField(max_length=100, default="all_todos")
-    num_of_important_tasks = models.IntegerField(default=0)
+    theme = models.CharField(default="light", max_length=20)
     # The attributes below are used by the Insights Page to analyze the user
     insights_enabled = models.BooleanField(default=False)
     last_insights_date = models.DateField(blank=True, null=True)
@@ -22,7 +17,6 @@ class Profile(models.Model):
     efficiency_change = models.IntegerField(default=0)
     efficiency_change_type = models.CharField(max_length=100, default="NOT_PROVIDED")
     todos_completed_created_long_ago = models.IntegerField(default=0)
-    default_tasklist = models.CharField(max_length=65, default="Unlisted")
 
     def __str__(self):
         return f"{self.user.username} Profile"

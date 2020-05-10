@@ -2,7 +2,16 @@
 {% block content %}
 {% load crispy_forms_tags %}
 
-<h1><center>{{ tasklist.title }}</center></h1>
+{% if tasklist != "Tasks" %}
+<a href="{% url 'tasklist-edit' tasklist.pk %}"
+    style="font-size:12ch; text-decoration: none; font-weight: 900; font-family: cursive; color:slateblue">
+    <center>{{ tasklist.title }}</center>
+</a>
+{% else %}
+<a style="font-size:12ch; text-decoration: none; font-weight: 900; font-family: cursive; color:slateblue">
+    <center>Tasks</center>
+</a>
+{% endif %}
 <br>
 
 <form method="POST" name="add_form">
@@ -16,35 +25,72 @@
     </fieldset>
 </form>
 
+{% if not no_todos %}
 <ul class="list-group content-section">
     {% for todo in todos %}
-        <li class="list-group-item dark-mode-assist-section big-list-item">
-            <button style="float:left" onclick="location.href='{% url 'todo-check' todo.pk %}'" class="btn btn-outline-success"><i class="fa fa-check"></i> </button>
-            <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'todo-detailed' todo.title todo.pk %}">  {{ todo.title }}</a>
-            <button data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
-        </li>
-        <div class="modal fade" id="exampleModalCenter{{ todo.pk }}" tabindex="-1" role="dialog"
-            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content dark-mode-assist-section">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLongTitle">Confirm the deletion</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        Are you sure you want to delete this task permanently?
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button onclick="location.href='{% url 'delete-item' 'todo' todo.pk %}'" type="submit"
-                            class="btn btn-danger">Yes, I am sure</button>
-                    </div>
+    {% if not todo.is_checked %}
+    <li class="list-group-item dark-mode-assist-section big-list-item colorful-list-items">
+        <button style="float:left" onclick="location.href='{% url 'todo-toggle' todo.pk %}'"
+            class="btn btn-outline-success"><i class="fa fa-check"></i> </button>
+        <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;"
+            href="{% url 'todo-detailed' todo.title todo.pk %}"> {{ todo.title }}</a>
+        <button data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;"
+            class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
+    </li>
+    {% endif %}
+    <div class="modal fade" id="exampleModalCenter{{ todo.pk }}" tabindex="-1" role="dialog"
+        aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content dark-mode-assist-section">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLongTitle">Confirm the deletion</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this task permanently?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button onclick="location.href='{% url 'delete-item' 'todo' todo.pk %}'" type="submit"
+                        class="btn btn-danger">Yes, I am sure</button>
                 </div>
             </div>
         </div>
+    </div>
     {% endfor %}
 </ul>
+{% endif %}
+
+
+{% if show_completed %}
+<a class="btn btn-outline-warning" data-toggle="collapse" href="#multiCollapseExample2" role="button"
+    aria-expanded="false" aria-controls="multiCollapseExample2">See completed tasks</a>
+<div class="row">
+    <div class="col">
+        <div class="collapse multi-collapse" id="multiCollapseExample2">
+            <br>
+            <div class="card card-body dark-mode-assist-section">
+                <ul class="list-group content-section">
+                    {% for todo in todos %}
+                    {% if todo.is_checked %}
+                    <li class="list-group-item dark-mode-assist-section big-list-item">
+                        <button style="float:left" onclick="location.href='{% url 'todo-toggle' todo.pk %}'"
+                            class="btn btn-success"><i class="fa fa-check"></i> </button>
+                        <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;"
+                            href="{% url 'todo-detailed' todo.title todo.pk %}"> <s>{{ todo.title }}</s></a>
+                        <br><b style="color:chocolate">On: {{ todo.date_completed|date:"F d" }}</b>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<br><br><br><br>
 
 {% endblock content %}

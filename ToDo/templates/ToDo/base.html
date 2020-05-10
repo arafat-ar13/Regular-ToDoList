@@ -1,6 +1,8 @@
 {% load static %}
 {% load user_agents %}
 <html>
+
+
 <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
@@ -11,11 +13,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     
 
-    {% if user.profile.has_dark_mode %}
+    {% if user.profile.theme == "dark" %}
         <link rel="stylesheet" type="text/css" href="{% static 'ToDo/main_dark.css' %}">
-    {% else %}
+    {% elif user.profile.theme == "light" %}
         <link rel="stylesheet" type="text/css" href="{% static 'ToDo/main_light.css' %}">
     {% endif %}
+
+
 
     <link rel="shortcut icon" href="{% static 'favicon.ico' type='image/x-icon' %}">
 
@@ -60,8 +64,6 @@
     </header>
 
     <main role="main" class="container">
-        <div class="row">
-            <div class="col-md-8">
                 {% if messages %}
                     {% for message in messages %}
                         <div class="alert alert-{{ message.tags }}">
@@ -70,7 +72,6 @@
                     {% endfor %}
                 {% endif %}
                 {% block content %}{% endblock %}
-            </div>
             {% if request.path == "/about/" %}
                 <div class="col-md-4">
                     <div class="content-section bg-dark">
@@ -92,61 +93,7 @@
                 </div>
             {% endif %}
             {% if user.is_authenticated and request.path != "/about/" %}
-                <div class="col-md-4">
-                    <div class="content-section">
-                        <h3>Your Sidebar</h3>
-                        <p class='text-muted'>Get to work quickly!
-                            <ul class="list-group">
-                                {% if request.path != "/todo/completed/" %}
-                                    <li class="list-group-item dark-mode-assist-section"><a href="{% url 'todo-completed' %}">Completed tasks</a></li>
-                                {% endif %}
-
-                                <!-- Dark Mode Handling -->
-                                {% if user.profile.has_dark_mode %}
-                                    <li class="list-group-item dark-mode-assist-section"><a href="{% url 'todo-darkmode' %}">Disable Dark Mode</a></li>
-                                {% else %}
-                                    <li class="list-group-item dark-mode-assist-section"><a href="{% url 'todo-darkmode' %}">Enable Dark Mode</a></li>
-                                {% endif %}
-
-                                {% if request.path == "/" %}
-                                    {% if user.profile.sort_todos_by == "date_added" %}
-                                        <li class="list-group-item dark-mode-assist-section">Sorted by: <b>{{ user.profile.sort_todos_by }}</b><br><a href="{% url 'todo-user-sort' %}">Sort by Due Date?</a></li>
-                                    {% else %}
-                                        <li class="list-group-item dark-mode-assist-section">Sorted by: <b>{{ user.profile.sort_todos_by }}</b><br><a href="{% url 'todo-user-sort' %}">Sort by Date Added?</a></li>
-                                    {% endif %}
-                                {% endif %}
-
-                                {% if request.path == "/" %}
-                                    <li class="list-group-item dark-mode-assist-section">
-                                        Filtered by: <b>{{ user.profile.filter_todos_by }}</b>
-                                        {% if user.profile.filter_todos_by == "all_todos" %}
-                                            <a href="{% url 'todo-filter' 'important_todos' %}" class="list-group-item dark-mode-assist-section">Filter by important tasks?</a>
-                                            <a href="{% url 'todo-filter' 'due_date_todos' %}" class="list-group-item dark-mode-assist-section">Filter by due dates?</a>
-                                        {% elif user.profile.filter_todos_by == "important_todos" %}
-                                            <a href="{% url 'todo-filter' 'all_todos' %}" class="list-group-item dark-mode-assist-section">Filter by all tasks?</a>
-                                            <a href="{% url 'todo-filter' 'due_date_todos' %}" class="list-group-item dark-mode-assist-section">Filter by due dates?</a>
-                                        {% elif user.profile.filter_todos_by == "due_date_todos" %}
-                                            <a href="{% url 'todo-filter' 'all_todos' %}" class="list-group-item dark-mode-assist-section">Filter by all tasks?</a>
-                                            <a href="{% url 'todo-filter' 'important_todos' %}" class="list-group-item dark-mode-assist-section">Filter by important tasks?</a>
-                                        {% endif %}
-                                    </li>
-
-                                {% endif %}
-
-
-                                {% if request.path != "/insights/" %}
-                                    <li class="list-group-item dark-mode-assist-section"><a href="{% url 'insights' %}">Insights</a></li>
-                                {% endif %}
-
-                                {% if request.path != '/' %}
-                                    <li class="list-group-item dark-mode-assist-section"><a href="{% url 'todo-home' %}">Back to Home</a></li>
-                                {% endif %}
-                            </ul>
-                        </p>
-                    </div>
-                </div>
             {% endif %}
-        </div>
     </main>
 
     <!-- Footer -->

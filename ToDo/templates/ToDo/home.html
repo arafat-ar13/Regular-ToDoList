@@ -9,11 +9,13 @@
     }
 
     .section-middle {
-        position:fixed;
+        position: fixed;
         top: 50%;
         left: 50%;
-        margin-top: 1em; /*set to a negative number 1/2 of your height*/
-        margin-left: -15em; /*set to a negative number 1/2 of your width*/
+        margin-top: 1em;
+        /*set to a negative number 1/2 of your height*/
+        margin-left: -15em;
+        /*set to a negative number 1/2 of your width*/
     }
 
     .button-size {
@@ -24,113 +26,120 @@
 
 
 {% if user.is_authenticated %}
-    <div class="content section full-content">
-        <form method="POST" name="add_form">
-            {% csrf_token %}
-            <fieldset class="form-group dark-mode-assist">
-                <legend class="border-bottom mb-4">New ToDo!</legend>
-                {{ add_form|crispy }}
-                <div class="form-group">
-                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                        <label class="btn btn-outline-primary active">
-                            <input type="radio" name="options" value="unlisted" id="optionA" autocomplete="off" checked> Unlisted
-                        </label>
-                        {% for tasklist in tasklists %}
-                            <label class="btn btn-outline-primary">
-                                <input type="radio" name="options" id="option{{ tasklist.pk }}" value={{ tasklist.pk }} autocomplete="off">{{ tasklist.title }}
-                            </label>
-                        {% endfor %}
-                    </div>
-                    <button class="btn btn-outline-info" type="submit" name="add-task">Add</button>
+<div class="content section full-content">
+    <form method="POST" name="add_form">
+        {% csrf_token %}
+        <fieldset class="form-group dark-mode-assist">
+            <legend class="border-bottom mb-4">New ToDo!</legend>
+            {{ add_form|crispy }}
+            <div class="form-group">
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-outline-primary active">
+                        <input type="radio" name="options" value="unlisted" id="optionA" autocomplete="off" checked>
+                        Unlisted
+                    </label>
+                    {% for tasklist in tasklists %}
+                    <label class="btn btn-outline-primary">
+                        <input type="radio" name="options" id="option{{ tasklist.pk }}" value={{ tasklist.pk }}
+                            autocomplete="off">{{ tasklist.title }}
+                    </label>
+                    {% endfor %}
                 </div>
-            </fieldset>
-        </form>
-    </div>
+                <button class="btn btn-outline-info" type="submit" name="add-task">Add</button>
+            </div>
+        </fieldset>
+    </form>
+</div>
 
-    {% if user.profile.todos == 0 %}
-        <div class="container-fluid">
-            <h2>You are on top of the world!</h2>
-        </div>
-    {% else %}
-        {% for todo in todos %}
-            {% if user.username|lower == todo.creator|lower and not todo.is_checked %}
-                <article class="media content-section">
-                    <div class="media-body full-content">
+{% if user.profile.todos == 0 %}
+<div class="container-fluid">
+    <h2>You are on top of the world!</h2>
+</div>
+{% else %}
+{% for todo in todos %}
+{% if user.username|lower == todo.creator|lower and not todo.is_checked %}
+<article class="content-section">
+    <div class="media-body full-content">
 
-                        {% if todo.has_notes %}
-                        <h2>
-                            <button onclick="location.href='{% url 'todo-check' todo.pk %}'" class="btn btn-outline-success"><i class="fa fa-check"></i></button> <a style="overflow: hidden; text-overflow: ellipsis;" href="{% url 'todo-detailed' todo.title todo.pk %}" class="article-title">  {{ todo.title }}</a> <button data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
-                            {% if todo.parent_list %}
-                                <p style="color: chartreuse;"> ({{ todo.parent_list.title }}) </p>
-                            {% endif %}
-                        </h2>
-                        {% else %}
-                        <h2>
-                            <button onclick="location.href='{% url 'todo-check' todo.pk %}'" class="btn btn-outline-success">
-                                <i class="fa fa-check"></i>
-                            </button>
-                            <a href="{% url 'todo-detailed' todo.title todo.pk  %}" class="article-title">  {{ todo.title }}</a> 
-                            <button data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;" class="btn btn-outline-danger">
-                                <i class="fa fa-trash"></i>
-                            </button>
-                            {% if todo.parent_list %}
-                                <p style="color: chartreuse;"> 
-                                    ({{ todo.parent_list.title }})
-                                </p>
-                            {% endif %}
-                        </h2>
-                        {% endif %}
-
-                        {% if not todo.important %}
-                        <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'"
-                            type="submit" class="btn btn-secondary">
-                            <span aria-hidden="true"><i class="fas fa-star"></i></span>
-                        </button>
-                        {% else %}
-                        <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'"
-                            type="submit" class="btn btn-warning">
-                            <span aria-hidden="true"><i class="fas fa-star"></i></span>
-                        </button>
-                        {% endif %}
-
-                        <!-- Modal -->
-                        <div class="modal fade" id="exampleModalCenter{{ todo.pk }}" tabindex="-1" role="dialog"
-                            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered" role="document">
-                                <div class="modal-content dark-mode-assist-section">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="exampleModalLongTitle">Confirm the deletion</h5>
-                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                            <span aria-hidden="true">&times;</span>
-                                        </button>
-                                    </div>
-                                    <div class="modal-body">
-                                        Are you sure you want to delete this task permanently?
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                        <button onclick="location.href='{% url 'delete-item' 'todo' todo.pk %}'" type="submit"
-                                            class="btn btn-danger">Yes, I am sure</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Modal ends -->
-
-                        <!-- Due Date -->
-                        {% if todo.due_date != None %}
-                        <p2 style="font-weight: 1000; color: {{ todo.due_date_color }}; ">Due on: {{ todo.due_date|date:"F d" }}</p2>
-                        {% endif %}
-
-                        <br>
-                        <div class="article-metadata">
-                            <small class="text-muted">Created on: {{ todo.date_created|date:"F d, Y" }}</small>
-                        </div>
-                    </div>
-                </article>
+        {% if todo.has_notes %}
+        <h2>
+            <button onclick="location.href='{% url 'todo-toggle' todo.pk %}'" class="btn btn-outline-success"><i
+                    class="fa fa-check"></i></button> <a style="overflow: hidden; text-overflow: ellipsis;"
+                href="{% url 'todo-detailed' todo.title todo.pk %}" class="article-title"> {{ todo.title }}</a> <button
+                data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;"
+                class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
+            {% if todo.parent_list %}
+            <p style="color: chartreuse;"> ({{ todo.parent_list.title }}) </p>
             {% endif %}
-        {% endfor %}
-    {% endif %}
+        </h2>
+        {% else %}
+        <h2>
+            <button onclick="location.href='{% url 'todo-toggle' todo.pk %}'" class="btn btn-outline-success">
+                <i class="fa fa-check"></i>
+            </button>
+            <a href="{% url 'todo-detailed' todo.title todo.pk  %}" class="article-title"> {{ todo.title }}</a>
+            <button data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;"
+                class="btn btn-outline-danger">
+                <i class="fa fa-trash"></i>
+            </button>
+            {% if todo.parent_list %}
+            <p style="color: chartreuse;">
+                ({{ todo.parent_list.title }})
+            </p>
+            {% endif %}
+        </h2>
+        {% endif %}
+
+        {% if not todo.important %}
+        <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'" type="submit"
+            class="btn btn-secondary">
+            <span aria-hidden="true"><i class="fas fa-star"></i></span>
+        </button>
+        {% else %}
+        <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'" type="submit"
+            class="btn btn-warning">
+            <span aria-hidden="true"><i class="fas fa-star"></i></span>
+        </button>
+        {% endif %}
+
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModalCenter{{ todo.pk }}" tabindex="-1" role="dialog"
+            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content dark-mode-assist-section">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLongTitle">Confirm the deletion</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete this task permanently?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button onclick="location.href='{% url 'delete-item' 'todo' todo.pk %}'" type="submit"
+                            class="btn btn-danger">Yes, I am sure</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal ends -->
+
+        <!-- Due Date -->
+        {% if todo.due_date != None %}
+        <p2 style="font-weight: 1000; color: {{ todo.due_date_color }}; ">Due on: {{ todo.due_date|date:"F d" }}</p2>
+        {% endif %}
+
+        <br>
+        <div class="article-metadata">
+            <small class="text-muted">Created on: {{ todo.date_created|date:"F d, Y" }}</small>
+        </div>
+    </div>
+</article>
+{% endif %}
+{% endfor %}
+{% endif %}
 
 {% else %}
 <style>
