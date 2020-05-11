@@ -1,25 +1,26 @@
-from django.shortcuts import render, redirect, HttpResponseRedirect
-from django.contrib import messages
-from .models import ToDo, SubTask, Notes, TaskList
-from django.views.generic import ListView, CreateView, UpdateView
-from django.urls import reverse, reverse_lazy
-from users.models import Profile
-from django.contrib.auth.models import User
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.decorators import login_required
-from django.core.mail import send_mail
-from .forms import NewTaskForm, DueDateForm, SubTaskForm, ToDoNotesForm, ContactMeForm, NewTaskListForm, SearchForm
-
 import datetime
-import calendar
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.shortcuts import HttpResponseRedirect, redirect, render
+from django.urls import reverse, reverse_lazy
+from django.views.generic import CreateView, ListView, UpdateView
+
+from .forms import (ContactMeForm, DueDateForm, NewTaskForm, NewTaskListForm,
+                    SearchForm, SubTaskForm, ToDoNotesForm)
+from .models import Notes, SubTask, TaskList, ToDo
+
 
 # Handling error views
 def handler500(request, *args):
     return render(request, 'ToDo/Error Pages/500.html', status=500)
 
+
 def handler404(request, *args):
     return render(request, 'ToDo/Error Pages/500.html', status=404)
-
 
 
 @login_required
@@ -33,26 +34,28 @@ def search(request):
             search_query = search_form.cleaned_data.get("query")
             user_todos = ToDo.objects.filter(creator=request.user)
 
-            matching_tasks = ToDo.objects.filter(title__icontains=search_query, creator=request.user)
-            matching_lists = TaskList.objects.filter(title__icontains=search_query, owner=request.user)
+            matching_tasks = ToDo.objects.filter(
+                title__icontains=search_query, creator=request.user)
+            matching_lists = TaskList.objects.filter(
+                title__icontains=search_query, owner=request.user)
 
             matching_subtasks = []
             for subtask in SubTask.objects.filter(title__icontains=search_query):
                 if subtask.parent_task in user_todos:
                     matching_subtasks.append(subtask)
-            
+
             matching_notes = []
             for note in Notes.objects.filter(content__icontains=search_query):
                 if note.parent_task in user_todos:
                     matching_notes.append(note)
-            
+
             results = {
-                "matching_tasks": matching_tasks, 
-                "matching_lists": matching_lists, 
-                "matching_subtasks": matching_subtasks, 
+                "matching_tasks": matching_tasks,
+                "matching_lists": matching_lists,
+                "matching_subtasks": matching_subtasks,
                 "matching_notes": matching_notes
             }
-            
+
             if len(matching_tasks) == 0 and len(matching_subtasks) == 0 and len(matching_lists) == 0 and len(matching_notes) == 0:
                 results = "got nothing"
 
@@ -66,6 +69,7 @@ def search(request):
     }
 
     return render(request, "ToDo/search_page.html", context=context)
+
 
 @login_required
 def todo_detail(request, title, pk):
@@ -114,7 +118,7 @@ def todo_detail(request, title, pk):
             messages.success(request, "Subtask added")
 
             return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-        
+
         elif due_form.is_valid():
             days = due_form.cleaned_data.get("due_date").lower()
 
@@ -188,7 +192,8 @@ def about(request):
 
         if contact_form.is_valid():
             user_email = contact_form.cleaned_data.get("your_email")
-            user_choice = contact_form.cleaned_data.get("your_question_subject")
+            user_choice = contact_form.cleaned_data.get(
+                "your_question_subject")
             choice_options = {
                 "0": "Choose one",
                 "1": "Account deletion",
@@ -206,18 +211,20 @@ def about(request):
 
                 if user_real_email != user_email:
 
-                    messages.info(request, "Since you are logged in, you must only use your own email address")
+                    messages.info(
+                        request, "Since you are logged in, you must only use your own email address")
                     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
             else:
                 try:
-                    username = User.objects.get(email=user_email).username + " (not logged in)"
+                    username = User.objects.get(
+                        email=user_email).username + " (not logged in)"
                 except:
                     username = "Anonymous"
 
-
             user_message += f"\n\nThe following is the user info:\nSent from: {user_email} \nUsername: {username}"
-            send_mail(subject=f"{user_choice}", message=user_message, from_email=user_email, recipient_list=["arafat33k@outlook.com"])
+            send_mail(subject=f"{user_choice}", message=user_message,
+                      from_email=user_email, recipient_list=["arafat33k@outlook.com"])
 
             messages.success(request, "Your support message was sent!")
             return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
@@ -251,16 +258,16 @@ def view_taskslists(request):
             new_list.owner = request.user
             new_list.save()
 
-            messages.success(request, "Your shiny new list is ready to be used")
+            messages.success(
+                request, "Your shiny new list is ready to be used")
             return redirect("tasklist-single-view", list_title, new_list.pk)
-    
+
     else:
         list_form = NewTaskListForm()
 
     context = {
         "user_lists": user_lists,
         "list_form": list_form,
-        "title": "Your Lists"
     }
 
     return render(request, "ToDo/tasklists_overview.html", context=context)
@@ -269,18 +276,18 @@ def view_taskslists(request):
 @login_required
 def tasklist_single_view(request, title, pk=None, **kwargs):
     if title == "tasks":
-        todos = ToDo.objects.filter(creator=request.user, parent_list=None).order_by("-date_created")
+        todos = ToDo.objects.filter(
+            creator=request.user, parent_list=None).order_by("-date_created")
         tasklist = "Tasks"
 
     else:
         try:
-            tasklist = TaskList.objects.get(title=title, pk=pk, owner=request.user)
+            tasklist = TaskList.objects.get(
+                title=title, pk=pk, owner=request.user)
         except:
             return render(request, "ToDo/restrict_access.html")
-
-
-        todos = ToDo.objects.filter(parent_list=tasklist, creator=request.user).order_by("-date_created")
-
+        todos = ToDo.objects.filter(
+            parent_list=tasklist, creator=request.user).order_by("-date_created")
 
     no_todos = False
     if len([todo for todo in todos if not todo.is_checked]) == 0:
@@ -290,18 +297,18 @@ def tasklist_single_view(request, title, pk=None, **kwargs):
     if len([todo for todo in todos if todo.is_checked]) == 0:
         show_completed = False
 
-
     if request.method == "POST":
         add_form = NewTaskForm(request.POST)
 
         if add_form.is_valid():
             task_title = add_form.cleaned_data.get("title")
             todo = ToDo(title=task_title)
-            
+
             todo.creator = request.user
 
             if title != "tasks":
-                todo.parent_list = TaskList.objects.get(title=title, owner=request.user)
+                todo.parent_list = TaskList.objects.get(
+                    title=title, owner=request.user)
                 todo.parent_list.num_of_tasks += 1
                 todo.parent_list.save()
 
@@ -309,10 +316,9 @@ def tasklist_single_view(request, title, pk=None, **kwargs):
 
             messages.success(request, "Your new task has been added")
             return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-        
+
     else:
         add_form = NewTaskForm()
-
 
     context = {
         "tasklist": tasklist,
@@ -341,7 +347,6 @@ def toggle_important_task(request, pk):
 
     messages.success(request, message)
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
 
 
 @login_required()
@@ -374,14 +379,14 @@ def delete(request, item_type, pk):
             return render(request, "ToDo/restrict_access.html")
 
         todo.delete()
-    
+
     elif item_type == "subtask":
         subtask = SubTask.objects.get(pk=pk)
 
         # Security check
         if subtask.parent_task.creator != request.user:
             return render(request, "ToDo/restrict_access.html")
-        
+
         subtask.parent_task.num_of_subtasks -= 1
         subtask.parent_task.save()
 
@@ -403,7 +408,7 @@ def delete(request, item_type, pk):
             tasklist = TaskList.objects.get(pk=pk, owner=request.user)
         except:
             return render(request, "ToDo/restrict_access.html")
-        
+
         # Delete child todos from the database
         for todo in ToDo.objects.filter(parent_list=tasklist):
             todo.delete()
@@ -412,7 +417,7 @@ def delete(request, item_type, pk):
 
     messages.info(request, f"Your {item_type} was deleted")
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-    
+
 
 @login_required
 def toggle_todo(request, pk):
@@ -420,7 +425,7 @@ def toggle_todo(request, pk):
         todo = ToDo.objects.get(pk=pk, creator=request.user)
     except:
         return render(request, "ToDo/restrict_access.html")
-    
+
     if todo.is_checked:
         todo.is_checked = False
         todo.date_completed = None
@@ -441,8 +446,6 @@ def toggle_subtask(request, pk):
             return render(request, "ToDo/restrict_access.html")
     except:
         return render(request, "ToDo/restrict_access.html")
-
-    
 
     if subtask.done:
         subtask.done = False
@@ -467,7 +470,8 @@ class TodoImportantView(LoginRequiredMixin, ListView):
     ordering = ["-date_created"]
 
     def get_queryset(self):
-        query_set = ToDo.objects.filter(creator=self.request.user, important=True, is_checked=False)
+        query_set = ToDo.objects.filter(
+            creator=self.request.user, important=True, is_checked=False)
 
         return query_set
 
@@ -512,7 +516,6 @@ class ToDoNextUpView(LoginRequiredMixin, ListView):
         context["todos_tomorrow"] = todos_tomorrow
         context["todos_later"] = todos_later
 
-
         return context
 
 
@@ -528,7 +531,7 @@ class TodoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return True if todo.creator == self.request.user else False
         except:
             return False
-        
+
     def handle_no_permission(self):
         return render(self.request, "ToDo/restrict_access.html")
 
@@ -588,7 +591,6 @@ class ToDoNotesUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def handle_no_permission(self):
         return render(self.request, "ToDo/restrict_access.html")
-        
 
     def form_valid(self, form):
         form.instance.creator = self.request.user
@@ -614,7 +616,7 @@ class TaskListUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return True if tasklist.owner == self.request.user else False
         except:
             False
-    
+
     def handle_no_permission(self):
         return render(self.request, "ToDo/restrict_access.html")
 

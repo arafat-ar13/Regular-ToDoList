@@ -1,6 +1,7 @@
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import User
+
 
 class TaskList(models.Model):
     title = models.CharField(max_length=100)
@@ -10,9 +11,11 @@ class TaskList(models.Model):
     def __str__(self):
         return self.title + " List"
 
+
 class ToDo(models.Model):
     title = models.CharField(max_length=100)
-    parent_list = models.ForeignKey(TaskList, on_delete=models.CASCADE, null=True)
+    parent_list = models.ForeignKey(
+        TaskList, on_delete=models.CASCADE, null=True)
     date_created = models.DateTimeField(default=timezone.now)
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
     is_checked = models.BooleanField(default=False)
@@ -34,10 +37,11 @@ class SubTask(models.Model):
 
     def __str__(self):
         return self.title
-        
+
 
 class Notes(models.Model):
-    content = models.TextField(help_text="Add anything that's important to the task")
+    content = models.TextField(
+        help_text="Add anything that's important to the task")
     date_added = models.DateField(auto_now_add=True)
     date_edited = models.DateField(auto_now=True)
     parent_task = models.ForeignKey(ToDo, on_delete=models.CASCADE)

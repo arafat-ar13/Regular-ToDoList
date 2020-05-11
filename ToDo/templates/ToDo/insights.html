@@ -1,4 +1,5 @@
 {% extends "ToDo/base.html" %}
+
 {% block content %}
 
 <style>
@@ -190,21 +191,32 @@
             </h3>
             <br>
             {% if user.profile.efficiency_change != 0 %}
-            {% if user.profile.efficiency_change_type == "Positive" %}
-            <h3>Congrats! You were more efficient this week than last week. Up by {{ user.profile.efficiency_change }}%
-            </h3>
+                {% if user.profile.efficiency_change_type == "Positive" %}
+                    <h3>
+                        Congrats! You were more efficient this week than last week. Up by {{ user.profile.efficiency_change }}%
+                    </h3>
 
-            {% elif user.profile.efficiency_change_type == "Negative" %}
-            <h3>Dang! Last week was more efficient than this week. Try harder! Down by
-                {{ user.profile.efficiency_change }}%</h3>
+                {% elif user.profile.efficiency_change_type == "Negative" %}
+                    <h3>
+                        Dang! Last week was more efficient than this week. Try harder! Down by {{ user.profile.efficiency_change }}%
+                    </h3>
 
-            {% elif user.profile.efficiency_change_type == "Same" %}
-            <h3>You were as efficient this week as you were last week. Keep it up!</h3>
+                {% elif user.profile.efficiency_change_type == "Same" %}
+                    <h3>
+                        You were as efficient this week as you were last week. Keep it up!
+                    </h3>
 
-            {% endif %}
+                {% endif %}
             {% endif %}
         </center>
     </div>
+    {% endif %}
+
+    {% if img_exists %}
+        <center>
+            <h2>Let's visualize how many tasks you completed over the week</h2>
+            <img style="width:100ch" src="../../../media/user_insights_graphs/{{ request.user }}/graph_this_week.png">
+        </center>
     {% endif %}
 
     <br>
@@ -212,7 +224,7 @@
     <div class="content-section dark-mode-assist-section">
         <center>
             <h1>This week you completed <br><b id='id-3' class="important-num-major">
-                    <script>animateValue("id-3", 0, {{ user.profile.todos_completed_on_time }}, 100)</script></b><br>
+                    <script>animateValue("id-3", 0, {{ user.profile.todos_completed_on_time }}, 4000)</script></b><br>
                 todos just on time! Yay!</h1>
         </center>
     </div>
@@ -223,7 +235,7 @@
         <center>
             <h1>
                 This week you completed <br><b id="id-4" class="important-num-major">
-                    <script>animateValue("id-4", 0, {{ user.profile.todos_completed_created_long_ago }}, 100)</script>
+                    <script>animateValue("id-4", 0, {{ user.profile.todos_completed_created_long_ago }}, 4000)</script>
                 </b><br>
                 todos that you created long before but couldn't find time to complete but this week you did! Awesome!!
             </h1>
@@ -231,8 +243,47 @@
     </div>
     {% endif %}
 
+    {% if user.profile.todos_completed_after_due_date != 0 %}
+    <div class="content-section dark-mode-assist-section">
+        <center>
+            <h1>
+                This week you completed <br><b style="color:orangered" id="id-5" class="important-num-major">
+                    <script>animateValue("id-5", 0, {{ user.profile.todos_completed_after_due_date }}, 4000)</script>
+                </b><br>
+                todos after its due date!
+            </h1>
+        </center>
+    </div>
+    {% endif %}
+
+    {% if user.profile.missed_tasks_this_week != 0 %}
+    <div class="content-section dark-mode-assist-section">
+        <center>
+            <h1>
+                This week you missed <br><b style="color:red" id="id-6" class="important-num-major">
+                    <script>animateValue("id-6", 0, {{ user.profile.missed_tasks_this_week }}, 4000)</script>
+                </b><br>
+                todos. Oh no!!
+            </h1>
+        </center>
+    </div>
+    {% endif %}
+
+    {% if user.profile.important_tasks_completed_this_week != 0 %}
+    <div class="content-section dark-mode-assist-section">
+        <center>
+            <h1>
+                This week you accomplished <br><b style="color:yellow" id="id-7" class="important-num-major">
+                    <script>animateValue("id-7", 0, {{ user.profile.important_tasks_completed_this_week }}, 4000)</script>
+                </b><br>
+                tasks that were important to you! Hope hard work paid off!
+            </h1>
+        </center>
+    </div>
+    {% endif %}
+
     <br>
-    {% if user.profile.todos_created_this_week == 0 or user.profile.todos_completed_on_time == 0 or user.profile.todos_completed_created_long_ago == 0%}
+    {% if user.profile.todos_created_this_week == 0 or user.profile.todos_completed_on_time == 0 or user.profile.todos_completed_created_long_ago == 0 or user.profile.important_tasks_completed_this_week == 0 or user.profile.missed_tasks_this_week == 0 or user.profile.todos_completed_after_due_date == 0 %}
     <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample2" role="button"
         aria-expanded="false" aria-controls="multiCollapseExample2">You are seeing less data than you should.<br>Find
         out more here</a>
