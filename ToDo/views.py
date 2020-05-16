@@ -1,11 +1,14 @@
+import calendar
 import datetime
+import json
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
-from django.shortcuts import HttpResponseRedirect, redirect, render
+from django.shortcuts import (HttpResponse, HttpResponseRedirect, redirect,
+                              render)
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView
 
@@ -27,8 +30,8 @@ def handler404(request, *args):
 def search(request):
     results = []
 
-    if request.method == "POST":
-        search_form = SearchForm(request.POST)
+    if request.method == "GET":
+        search_form = SearchForm(request.GET)
 
         if search_form.is_valid():
             search_query = search_form.cleaned_data.get("query")
@@ -85,71 +88,6 @@ def todo_detail(request, title, pk):
     except:
         note = Notes()
 
-    if request.method == "POST":
-        note_form = ToDoNotesForm(request.POST)
-        subtask_form = SubTaskForm(request.POST)
-        due_form = DueDateForm(request.POST)
-
-        if note_form.is_valid():
-            task_notes = note_form.cleaned_data.get("task_notes")
-
-            new_note = Notes(content=task_notes)
-            new_note.parent_task = todo
-            new_note.save()
-
-            todo.has_notes = True
-            todo.save()
-
-            messages.success(request, "Your notes are saved")
-
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-        elif subtask_form.is_valid():
-            subtask_title = subtask_form.cleaned_data.get("sub_task")
-
-            subtask = SubTask(title=subtask_title)
-            subtask.parent_task = todo
-
-            subtask.parent_task.num_of_subtasks += 1
-            subtask.parent_task.save()
-
-            subtask.save()
-
-            messages.success(request, "Subtask added")
-
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-        elif due_form.is_valid():
-            days = due_form.cleaned_data.get("due_date").lower()
-
-            if days == "today":
-                days = 0
-            elif days == "tomorrow":
-                days = 1
-            elif days == "next week":
-                days = 7
-            elif days == "yesterday":
-                days = -1
-            elif days == "last week":
-                days = -7
-            else:
-                days = int(days)
-
-            today = datetime.datetime.today()
-            due_date = today + datetime.timedelta(days=days)
-
-            todo.due_date = due_date
-            todo.save()
-
-            messages.success(request, "Due Date added to task")
-
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-    else:
-        note_form = ToDoNotesForm()
-        subtask_form = SubTaskForm()
-        due_form = DueDateForm()
-
     # Task progress percentage
     percentage = 0
     if subtasks:
@@ -158,32 +96,16 @@ def todo_detail(request, title, pk):
 
     context = {
         "todo": todo,
-        "note_form": note_form,
+        "note_form": ToDoNotesForm(),
         "note": note,
-        "subtask_form": subtask_form,
+        "subtask_form": SubTaskForm(),
         "subtasks": subtasks,
-        "due_form": due_form,
+        "due_form": DueDateForm(),
         "title": todo.title,
         "percentage": percentage
     }
 
     return render(request, "ToDo/detailed_view.html", context=context)
-
-
-@login_required
-def remove_due_date(request, pk):
-    try:
-        todo = ToDo.objects.get(pk=pk, creator=request.user)
-    except:
-        return render(request, "ToDo/restrict_access.html")
-
-    todo.due_date = None
-    todo.due_date_color = None
-
-    todo.save()
-    messages.info(request, "Due Date removed")
-
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def about(request):
@@ -250,7 +172,7 @@ def view_taskslists(request):
         if list_form.is_valid():
             list_title = list_form.cleaned_data.get("title")
 
-            if list_title == "Tasks" or list_title == "tasks":
+            if list_title in ["Tasks", "tasks", "Important", "important"]:
                 messages.info(request, "Sorry, this is a reserved name")
                 return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
@@ -265,9 +187,17 @@ def view_taskslists(request):
     else:
         list_form = NewTaskListForm()
 
+    # Passing 'yes' if there should be an Insights highlight
+    insights_highlight = False
+    today = datetime.datetime.now(datetime.timezone.utc).date()
+    if (today - request.user.profile.last_insights_date).days >= 7:
+        insights_highlight = True
+
     context = {
         "user_lists": user_lists,
         "list_form": list_form,
+        "insights_highlight": insights_highlight,
+        "today_name": calendar.day_name[datetime.datetime.today().weekday()]
     }
 
     return render(request, "ToDo/tasklists_overview.html", context=context)
@@ -277,7 +207,7 @@ def view_taskslists(request):
 def tasklist_single_view(request, title, pk=None, **kwargs):
     if title == "tasks":
         todos = ToDo.objects.filter(
-            creator=request.user, parent_list=None).order_by("-date_created")
+            creator=request.user, parent_list=None)
         tasklist = "Tasks"
 
     else:
@@ -287,45 +217,16 @@ def tasklist_single_view(request, title, pk=None, **kwargs):
         except:
             return render(request, "ToDo/restrict_access.html")
         todos = ToDo.objects.filter(
-            parent_list=tasklist, creator=request.user).order_by("-date_created")
+            parent_list=tasklist, creator=request.user)
 
-    no_todos = False
-    if len([todo for todo in todos if not todo.is_checked]) == 0:
-        no_todos = True
-
-    show_completed = True
-    if len([todo for todo in todos if todo.is_checked]) == 0:
-        show_completed = False
-
-    if request.method == "POST":
-        add_form = NewTaskForm(request.POST)
-
-        if add_form.is_valid():
-            task_title = add_form.cleaned_data.get("title")
-            todo = ToDo(title=task_title)
-
-            todo.creator = request.user
-
-            if title != "tasks":
-                todo.parent_list = TaskList.objects.get(
-                    title=title, owner=request.user)
-                todo.parent_list.num_of_tasks += 1
-                todo.parent_list.save()
-
-            todo.save()
-
-            messages.success(request, "Your new task has been added")
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-    else:
-        add_form = NewTaskForm()
+    completed_todos = todos.filter(is_checked=True).order_by("-date_completed")
+    todos = todos.filter(is_checked=False).order_by("-date_created")
 
     context = {
         "tasklist": tasklist,
         "todos": todos,
-        "add_form": add_form,
-        "no_todos": no_todos,
-        "show_completed": show_completed,
+        "completed_todos": completed_todos,
+        "add_form": NewTaskForm(),
         "title": title
     }
 
@@ -333,145 +234,358 @@ def tasklist_single_view(request, title, pk=None, **kwargs):
 
 
 @login_required
-def toggle_important_task(request, pk):
-    todo = ToDo.objects.get(pk=pk)
+def create(request):
+    """
+    Universal function to create ToDos, Subtasks and Notes. It can also be used to create Due Dates
+    with AJAX support for asynchronous operation
+    Having a single function will make sure to have only one URL for creating objects
+    """
 
-    if todo.important:
-        todo.important = False
-        message = "The task is not important anymore"
+    # Setting up dummy variables to avoid any UnboundLocal Errors
+    title = ""
+    content = ""
+    days = ""
+    parent_list = ""
+    parent_task = ""
+    response_data = {}
+
+    if request.method == "POST":
+        item_type = request.POST.get("item_type")
+
+        if item_type == "due_date":
+            days = request.POST.get("due_date").lower()
+        elif item_type != "notes":
+            title = request.POST.get("title")
+        else:
+            content = request.POST.get("content")
+
+        if item_type != "todo":
+            parent_task = ToDo.objects.get(
+                pk=int(request.POST.get("parent_task_pk")), creator=request.user)
+        else:
+            if request.POST.get("parent_list") != "Tasks":
+                parent_list = TaskList.objects.get(
+                    title=request.POST.get("parent_list"))
+            else:
+                parent_list = "Tasks"
+
+        if item_type == "todo":
+            new_todo = ToDo(title=title)
+            new_todo.creator = request.user
+
+            # Setting up parent list
+            if parent_list != "Tasks":
+                new_todo.parent_list = parent_list
+                new_todo.parent_list.num_of_tasks += 1
+                new_todo.parent_list.save()
+            else:
+                parent_list = None
+                new_todo.parent_list = parent_list
+
+            new_todo.save()
+
+            response_data["todo_pk"] = new_todo.pk
+            response_data["todo_title"] = new_todo.title
+
+        elif item_type == "subtask":
+            new_subtask = SubTask(title=title)
+
+            # Setting up parent task
+            new_subtask.parent_task = parent_task
+            new_subtask.parent_task.num_of_subtasks += 1
+            new_subtask.parent_task.save()
+
+            new_subtask.save()
+
+            response_data = {}
+            response_data["subtask_pk"] = new_subtask.pk
+            response_data["subtask_title"] = new_subtask.title
+
+        elif item_type == "notes":
+            new_note = Notes(content=content)
+
+            # Setting up parent_task
+            new_note.parent_task = parent_task
+            new_note.parent_task.has_notes = True
+            new_note.parent_task.save()
+
+            new_note.save()
+
+            response_data = {}
+            response_data["note_content"] = new_note.content
+            response_data["note_pk"] = new_note.pk
+            response_data["note_created"] = new_note.date_added.strftime(
+                "%b %d, %Y")
+
+        elif item_type == "due_date":
+            if days == "today":
+                days = 0
+            elif days == "tomorrow":
+                days = 1
+            elif days == "next week":
+                days = 7
+            elif days == "yesterday":
+                days = -1
+            elif days == "last week":
+                days = -7
+            else:
+                days = int(days)
+
+            today = datetime.datetime.today()
+            due_date = today + datetime.timedelta(days=days)
+
+            parent_task.due_date = due_date
+
+            if today.date() == due_date.date():
+                parent_task.due_date_color = "blue"
+            elif today.date() > due_date.date():
+                parent_task.due_date_color = "red"
+            elif today.date() < due_date.date():
+                parent_task.due_date_color = "green"
+
+            parent_task.save()
+
+            response_data["due_date"] = due_date.strftime("%b %d")
+            response_data["due_date_color"] = parent_task.due_date_color
+            response_data["parent_task_pk"] = parent_task.pk
+
+        return HttpResponse(
+            json.dumps(response_data),
+            content_type="application/json"
+        )
+
     else:
-        todo.important = True
-        message = "Okay, the task is important. Get working!"
+        return HttpResponse(
+            json.dumps({"nothing to see": "this isn't happening"}),
+            content_type="application/json"
+        )
 
-    todo.save()
 
-    messages.success(request, message)
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+@login_required
+def delete(request):
+    """
+    Universal view function to delete any object from the database.
+    It has AJAX support for asynchronous deletion and removal of items
+    """
+    response_data = {}
+    if request.method == "POST":
+        item_type = request.POST.get("item_type")
+        pk = int(request.POST.get("pk"))
+
+        if item_type == "todo":
+            todo = ToDo.objects.get(pk=pk)
+            todo.delete()
+
+        elif item_type == "subtask":
+            subtask = SubTask.objects.get(pk=pk)
+
+            subtask.parent_task.num_of_subtasks -= 1
+            subtask.parent_task.save()
+
+            response_data["hide_heading"] = "no"
+            if subtask.parent_task.num_of_subtasks == 0:
+                response_data["hide_heading"] = "yes"
+
+            subtask.delete()
+
+        elif item_type == "notes":
+            notes = Notes.objects.get(pk=pk)
+
+            notes.parent_task.has_notes = False
+            notes.parent_task.save()
+            notes.delete()
+
+        elif item_type == "tasklist":
+            tasklist = TaskList.objects.get(pk=pk)
+
+            # Delete child todos from the database
+            for todo in ToDo.objects.filter(parent_list=tasklist):
+                todo.delete()
+
+            tasklist.delete()
+
+        elif item_type == "due_date":
+            parent_task = ToDo.objects.get(pk=pk)
+            parent_task.due_date = None
+            parent_task.due_date_color = None
+            parent_task.save()
+
+        return HttpResponse(
+            json.dumps(response_data),
+            content_type="application/json"
+        )
+
+    else:
+        return HttpResponse(
+            json.dumps({"nothing to see": "this isn't happening"}),
+            content_type="application/json"
+        )
+
+
+@login_required
+def toggle_important_task(request):
+
+    if request.method == "POST":
+        pk = int(request.POST.get("pk"))
+
+        todo = ToDo.objects.get(pk=pk)
+
+        if todo.important:
+            todo.important = False
+        else:
+            todo.important = True
+
+        todo.save()
+
+        response_data = "success!"
+
+        return HttpResponse(
+            json.dumps(response_data),
+            content_type="application/json"
+        )
+
+    else:
+        return HttpResponse(
+            json.dumps({"nothing to see": "this isn't happening"}),
+            content_type="application/json"
+        )
 
 
 @login_required()
-def toggle_dark_mode(request):
+def toggle_theme(request):
     user = User.objects.get(username=request.user.username)
 
-    if user.profile.has_dark_mode:
-        user.profile.has_dark_mode = False
-        message = "Dark Mode disabled"
+    if request.method == "POST":
+        theme = request.POST.get("theme")
+        print(theme)
+
+        user.profile.theme = theme
+        user.save()
+
+        response_data = "success!"
+
+        return HttpResponse(
+            json.dumps(response_data),
+            content_type="application/json"
+        )
+
     else:
-        user.profile.has_dark_mode = True
-        message = "Welcome to the Dark Side"
-
-    user.save()
-
-    messages.success(request, message)
-
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+        return HttpResponse(
+            json.dumps({"nothing to see": "this isn't happening"}),
+            content_type="application/json"
+        )
 
 
 @login_required
-def delete(request, item_type, pk):
-    """
-    Universal view function to delete any object from the database
-    """
-    if item_type == "todo":
+def toggle_todo(request):
+
+    if request.method == "POST":
+        pk = int(request.POST.get("pk"))
+        todo = ToDo.objects.get(pk=pk)
+
+        completed_tasks_before = ToDo.objects.filter(
+            parent_list=todo.parent_list, is_checked=True).count()
+
+        if todo.is_checked:
+            todo.is_checked = False
+            todo.date_completed = None
+        else:
+            todo.is_checked = True
+            todo.date_completed = datetime.datetime.now()
+
+        todo.save()
+
+        response_data = {}
+        response_data["todo_title"] = todo.title
+        response_data["todo_pk"] = todo.pk
         try:
-            todo = ToDo.objects.get(pk=pk, creator=request.user)
+            response_data["todo_date_completed"] = todo.date_completed.strftime(
+                "%b %d")
         except:
-            return render(request, "ToDo/restrict_access.html")
+            response_data["todo_date_completed"] = ""
 
-        todo.delete()
+        # Checking if the todo was important or not
+        if todo.important:
+            response_data["important_op"] = "mark"
+            response_data["important_class"] = "btn btn-warning"
+        else:
+            response_data["important_op"] = "unmark"
+            response_data["important_class"] = "btn btn-secondary"
 
-    elif item_type == "subtask":
-        subtask = SubTask.objects.get(pk=pk)
+        # Checking if we should display "Completed Tasks"
+        if (ToDo.objects.filter(parent_list=todo.parent_list, is_checked=True).count() - completed_tasks_before == 1) and completed_tasks_before != 1:
+            show_hidden_completed_tasks = True
+        elif ToDo.objects.filter(parent_list=todo.parent_list, is_checked=True).count() == 0:
+            show_hidden_completed_tasks = False
+        else:
+            show_hidden_completed_tasks = None
 
-        # Security check
-        if subtask.parent_task.creator != request.user:
-            return render(request, "ToDo/restrict_access.html")
+        response_data["show_hidden_completed_tasks"] = show_hidden_completed_tasks
 
-        subtask.parent_task.num_of_subtasks -= 1
-        subtask.parent_task.save()
+        show_tasks = True
+        if ToDo.objects.filter(parent_list=todo.parent_list, is_checked=False).count() == 0:
+            show_tasks = False
 
-        subtask.delete()
+        response_data["show_tasks"] = show_tasks
 
-    elif item_type == "notes":
-        notes = Notes.objects.get(pk=pk)
+        return HttpResponse(
+            json.dumps(response_data),
+            content_type="application/json"
+        )
 
-        # Security check
-        if notes.parent_task.creator != request.user:
-            return render(request, "ToDo/restrict_access.html")
-
-        notes.parent_task.has_notes = False
-        notes.parent_task.save()
-        notes.delete()
-
-    elif item_type == "tasklist":
-        try:
-            tasklist = TaskList.objects.get(pk=pk, owner=request.user)
-        except:
-            return render(request, "ToDo/restrict_access.html")
-
-        # Delete child todos from the database
-        for todo in ToDo.objects.filter(parent_list=tasklist):
-            todo.delete()
-
-        tasklist.delete()
-
-    messages.info(request, f"Your {item_type} was deleted")
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-
-@login_required
-def toggle_todo(request, pk):
-    try:
-        todo = ToDo.objects.get(pk=pk, creator=request.user)
-    except:
-        return render(request, "ToDo/restrict_access.html")
-
-    if todo.is_checked:
-        todo.is_checked = False
-        todo.date_completed = None
     else:
-        todo.is_checked = True
-        todo.date_completed = datetime.datetime.now()
-
-    todo.save()
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+        return HttpResponse(
+            json.dumps({"nothing to see": "this isn't happening"}),
+            content_type="application/json"
+        )
 
 
 @login_required
-def toggle_subtask(request, pk):
-    try:
-        subtask = SubTask.objects.get(pk=pk)
-        # Security check
-        if subtask.parent_task.creator != request.user:
-            return render(request, "ToDo/restrict_access.html")
-    except:
-        return render(request, "ToDo/restrict_access.html")
+def toggle_subtask(request):
 
-    if subtask.done:
-        subtask.done = False
+    if request.method == "POST":
+        subtask = SubTask.objects.get(pk=int(request.POST.get("pk")))
+
+        if subtask.done:
+            subtask.done = False
+        else:
+            subtask.done = True
+
         subtask.save()
 
-        messages.info(request, "Okay, take your time!")
+        response_data = {}
+
+        try:
+            all_subtasks = SubTask.objects.filter(parent_task=subtask.parent_task)
+            completed_tasks = SubTask.objects.filter(parent_task=subtask.parent_task).filter(done=True).count()
+            percentage = int((completed_tasks/all_subtasks.count()) * 100)
+            print(percentage)
+
+        except ZeroDivisionError:
+            percentage = 0
+
+        response_data["percentage"] = percentage
+
+        return HttpResponse(
+            json.dumps(response_data),
+            content_type="application/json"
+        )
 
     else:
-
-        subtask.done = True
-        subtask.save()
-
-        messages.info(request, "Awesome!")
-
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+        return HttpResponse(
+            json.dumps({"nothing to see": "this isn't happening"}),
+            content_type="application/json"
+        )
 
 
 class TodoImportantView(LoginRequiredMixin, ListView):
     model = ToDo
     template_name = "ToDo/important_tasks.html"
     context_object_name = "todos"
-    ordering = ["-date_created"]
 
     def get_queryset(self):
         query_set = ToDo.objects.filter(
-            creator=self.request.user, important=True, is_checked=False)
+            creator=self.request.user, important=True, is_checked=False).order_by("-date_created")
 
         return query_set
 
@@ -492,7 +606,7 @@ class ToDoNextUpView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        today = datetime.datetime.now(datetime.timezone.utc)
+        today = datetime.datetime.now()
         tomorrow = today + datetime.timedelta(days=1)
 
         todos_earlier = []
@@ -502,13 +616,13 @@ class ToDoNextUpView(LoginRequiredMixin, ListView):
 
         for todo in ToDo.objects.filter(creator=self.request.user, is_checked=False):
             if todo.due_date is not None:
-                if todo.due_date.day == today.day and todo.due_date.month == today.month and todo.due_date.year == today.year:
+                if todo.due_date.date() == today.date():
                     todos_today.append(todo)
-                elif todo.due_date.day == tomorrow.day and todo.due_date.month == tomorrow.month and todo.due_date.year == tomorrow.year:
+                elif todo.due_date.date() == tomorrow.date():
                     todos_tomorrow.append(todo)
-                elif todo.due_date < today:
+                elif todo.due_date.date() < today.date():
                     todos_earlier.append(todo)
-                elif todo.due_date > tomorrow:
+                elif todo.due_date.date() > tomorrow.date():
                     todos_later.append(todo)
 
         context["todos_earlier"] = todos_earlier

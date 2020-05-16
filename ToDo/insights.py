@@ -42,23 +42,25 @@ def draw_bar_graph(user_todos_this_week, user):
     for todo in user_todos_this_week:
         day_completions[calendar.day_name[todo.date_completed.weekday()]] += 1
 
-    # Cleaning up the folder for next week
-    today = datetime.datetime.now(datetime.timezone.utc)
-    if (today.date() - user.profile.last_insights_date).days >= 7:
-        os.remove(path)
+    # We'll only proceed to drawing the graph if they user had completed at least one task over the week
+    draw = False
+    for val in day_completions.values():
+        if val > 0:
+            draw = True
 
-    day_completions = {
-        "days": list(day_completions.keys()),
-        "tasks": list(day_completions.values())
-    }
+    if draw:
+        day_completions = {
+            "days": list(day_completions.keys()),
+            "tasks": list(day_completions.values())
+        }
 
-    # Starting the plot
-    sns.barplot(x="days", y="tasks", data=day_completions)
-    plt.title(f"Weekly overview of {user.username}")
-    plt.xlabel("Days")
-    plt.ylabel("Tasks completed")
+        # Starting the plot
+        sns.barplot(x="days", y="tasks", data=day_completions)
+        plt.title(f"Weekly overview of {user.username}")
+        plt.xlabel("Days")
+        plt.ylabel("Tasks completed")
 
-    plt.savefig(path)
+        plt.savefig(path)
 
 
 @login_required
@@ -70,7 +72,6 @@ def render_insights(request):
     user_total_todos = user_todos.count()
     user_active_todos = ToDo.objects.filter(
         creator=user, is_checked=False).count()
-
 
     # Enabling user's Insights Page
     if not user.profile.insights_enabled:
@@ -239,7 +240,7 @@ def render_insights(request):
     img_exists = False
     if os.path.isfile(f"media/user_insights_graphs/{user}/graph_this_week.png"):
         img_exists = True
-        
+
     context = {
         "ready": ready,
         "title": "Insights",

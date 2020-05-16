@@ -1,54 +1,55 @@
 {% for todo in todos %}
-<article class="content-section">
-    <div class="media-body full-content">
-        <h2>
-            <button onclick="location.href='{% url 'todo-toggle' todo.pk %}'" class="btn btn-outline-success">
-                <i class="fa fa-check"></i>
-            </button>
-            <a style="overflow: hidden; text-overflow: ellipsis;" href="{% url 'todo-detailed' todo.title todo.pk %}"
-                class="article-title"> {{ todo.title }}</a>
-            <button data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;"
-                class="btn btn-outline-danger">
-                <i class="fas fa-trash"></i>
-            </button>
-            {% if not todo.important %}
-            <button style="float: right; margin-right: 5px;"
-                onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'" type="submit"
-                class="btn btn-secondary">
-                <span aria-hidden="true"><i class="fas fa-star"></i></span>
-            </button>
-            {% else %}
-            <button style="float: right; margin-right: 5px;"
-                onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'" type="submit"
-                class="btn btn-warning">
-                <span aria-hidden="true"><i class="fas fa-star"></i></span>
-            </button>
-            {% endif %}
-        </h2>
-        <!-- Modal -->
-        <div class="modal fade" id="exampleModalCenter{{ todo.pk }}" tabindex="-1" role="dialog"
-            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content dark-mode-assist-section">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLongTitle">Confirm the deletion</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        Are you sure you want to delete this task permanently?
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button onclick="location.href='{% url 'delete-item' 'todo' todo.pk %}'" type="submit"
-                            class="btn btn-danger">Yes, I am sure</button>
+    <article class="content-section" id="todo-item-{{ todo.pk }}">
+        <div class="media-body full-content">
+            <h2>
+                <button onclick="toggleTodo({{ todo.pk }}, 'check', 'other')" class="btn btn-outline-success">
+                    <i class="fa fa-check"></i>
+                </button>
+                <a id="todo-title-{{ todo.pk }}" style="overflow: hidden; text-overflow: ellipsis;" href="{% url 'todo-detailed' todo.title todo.pk %}"
+                    class="article-title"> 
+                    {{ todo.title }}
+                </a>
+                <button data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;"
+                    class="btn btn-outline-danger">
+                    <i class="fas fa-trash"></i>
+                </button>
+
+                {% if not todo.important %}
+                    <button id="todo-important-{{ todo.pk }}" onclick="toggleImportant({{ todo.pk }}, 'mark')"
+                        style="float: right; margin-right:3px" class="btn btn-secondary">
+                        <i class="fas fa-star"></i>
+                    </button>
+                {% else %}
+                    <button id="todo-important-{{ todo.pk }}" onclick="toggleImportant({{ todo.pk }}, 'unmark')"
+                        style="float: right; margin-right:3px" class="btn btn-warning">
+                        <i class="fas fa-star"></i>
+                    </button>
+                {% endif %}
+            </h2>
+            <!-- Modal -->
+            <div class="modal fade" id="exampleModalCenter{{ todo.pk }}" tabindex="-1" role="dialog"
+                aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content dark-mode-assist-section">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLongTitle">Confirm the deletion</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to delete this task permanently?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button data-dismiss="modal" onclick="deleteItem('todo', {{ todo.pk }})" type="submit"
+                                class="btn btn-danger">Yes, I am sure</button>
+                        </div>
                     </div>
                 </div>
             </div>
+            <!-- Modal ends -->
+            {% block due %}{% endblock %}
         </div>
-        <!-- Modal ends -->
-        {% block due %}{% endblock %}
-    </div>
-</article>
+    </article>
 {% endfor %}

@@ -1,7 +1,7 @@
-{% load static %}
+﻿{% load static %}
 {% load user_agents %}
-<html>
 
+<html>
 
 <head>
     <!-- Required meta tags -->
@@ -9,90 +9,155 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    
+
 
     {% if user.profile.theme == "dark" %}
-        <link rel="stylesheet" type="text/css" href="{% static 'ToDo/main_dark.css' %}">
+        <link rel="stylesheet" id="css_changer" type="text/css" href="{% static 'ToDo/css/main_dark.css' %}">
     {% elif user.profile.theme == "light" %}
-        <link rel="stylesheet" type="text/css" href="{% static 'ToDo/main_light.css' %}">
+        <link rel="stylesheet" id="css_changer" type="text/css" href="{% static 'ToDo/css/main_light.css' %}">
     {% endif %}
 
 
     <link rel="shortcut icon" href="{% static 'favicon.ico' type='image/x-icon' %}">
 
     {% if title %}
-        <title>Regular ToDoList - {{ title }}</title>
+        <title>{{ title }} - Regular ToDoList </title>
     {% else %}
         <title>Regular ToDoList</title>
     {% endif %}
 </head>
 
+
+<script>
+
+    // Setting up variables to access Django URLs and Static files in index.js
+    let important_toggle_url = "{% url 'todo-toggle-important' %}"
+    let theme_toggle_url = "{% url 'toggle-theme' %}"
+    let light_theme = "{% static 'ToDo/css/main_light.css' %}"
+    let dark_theme = "{% static 'ToDo/css/main_dark.css' %}"
+    let subtask_toggle_url = "{% url 'todo-toggle-subtask' %}"
+    let todo_toggle_url = "{% url 'todo-toggle' %}"
+    let delete_url = "{% url 'delete-item' %}"
+    let create_url = "{% url 'create' %}"
+
+</script>
+
+
 <body>
     <header class="site-header">
         <nav class="navbar navbar-nav navbar-dark bg-steel navbar-expand-md fixed-top nav-fill">
-          <div class="container">
-            <a style="padding-left:15px" class="navbar-brand mr-4 nav-link" href="{% url 'todo-home' %}">Regular ToDo</a>
-            {% if user.is_authenticated %}
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-            {% endif %}
-            <div class="collapse navbar-collapse" id="navbarToggle">
-              <div class="navbar-nav mr-auto">
-              </div>
-              <!-- Navbar Right Side -->
-              <div class="navbar-nav">
+            <div class="container">
+                <a style="padding-left:15px" class="navbar-brand mr-4 nav-link" href="{% url 'todo-home' %}">
+                    Regular ToDo
+                </a>
                 {% if user.is_authenticated %}
-                    {% if request.path != "/profile/" %}
-                        <a class="nav-item nav-link" href="{% url 'profile' %}">Profile</a>
-                    {% endif %}
-                    {% if request.path != "/about/" %}
-                        <a class="nav-item nav-link" href="{% url 'todo-about' %}">About the App</a>
-                    {% endif %}
-                    <a class="nav-item nav-link" href="{% url 'logout' %}">Logout</a>
-                    {% if user.is_superuser %}
-                        <a class="nav-item nav-link" href="{% url 'admin:index' %}">Admin</a>
-                    {% endif %}
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle"
+                        aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
                 {% endif %}
-              </div>
+                <div class="collapse navbar-collapse" id="navbarToggle">
+                    <div class="navbar-nav mr-auto">
+                    </div>
+                    <!-- Navbar Right Side -->
+                    <div class="navbar-nav">
+                        {% if user.is_authenticated %}
+                            {% if request.path != "/search/" %}
+                                <a title="Search everything" style="font-size: 20px;" class="nav-item nav-link"
+                                    href="{% url 'search' %}"><i class="fas fa-search"></i>
+                                    {% if request.user_agent.is_mobile %}
+                                        Search
+                                    {% endif %}
+                                </a>
+                            {% endif %}
+                            {% if user.profile.theme == "light" %}
+                                <a title="Turn on Dark Mode" id="theme-toggler" style="font-size: 21px;"
+                                    class="nav-item nav-link fas fa-moon" onclick="changeTheme('dark')">
+                                    {% if request.user_agent.is_mobile %}
+                                        Toggle theme
+                                    {% endif %}
+                                </a>
+                            {% else %}
+                                <a title="Turn on Light Mode" id="theme-toggler" style="font-size: 21px;"
+                                    class="nav-item nav-link fas fa-sun" onclick="changeTheme('light')">
+                                    {% if request.user_agent.is_mobile %}
+                                        Toggle theme
+                                    {% endif %}
+                                </a>
+                            {% endif %}
+                            {% if request.path != "/profile/" %}
+                                <a title="Your Profile" style="font-size: 20px;" class="nav-item nav-link"
+                                    href="{% url 'profile' %}"><i class="fas fa-user-circle"></i>
+                                    {% if request.user_agent.is_mobile %}
+                                        Your Profile
+                                    {% endif %}
+                                </a>
+                            {% endif %}
+                            {% if request.path != "/insights/" %}
+                                <a title="Your Insights" style="font-size: 20px;" class="nav-item nav-link"
+                                    href="{% url 'insights' %}"><i class="fab fa-medapps"></i>
+                                    {% if request.user_agent.is_mobile %}
+                                        Your Insights
+                                    {% endif %}
+                                </a>
+                            {% endif %}
+                            <a title="Logout" style="font-size: 20px;" class="nav-item nav-link"
+                                href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i>
+                                {% if request.user_agent.is_mobile %}
+                                    Logout
+                                {% endif %}
+                            </a>
+                            {% if user.is_superuser %}
+                                <a title="Admin Page" style="font-size: 20px;" class="nav-item nav-link"
+                                    href="{% url 'admin:index' %}"><i class="fas fa-user-cog"></i>
+                                    {% if request.user_agent.is_mobile %}
+                                        Admin Page
+                                    {% endif %}
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-          </div>
         </nav>
     </header>
 
     <main role="main" class="container">
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-                {% block content %}{% endblock %}
-            {% if request.path == "/about/" %}
-                <div class="col-md-4">
-                    <div class="content-section bg-dark">
-                        <h3 style="color:azure">About Me</h3>
-                        <p style="color:floralwhite">
-                            Hey! I am Arafat Khan
-                        </p>
-                        <p style="color:lightblue">
-                            I am a Python Developer who's learning how to print Hello World and aiming to be a Machine Learning engineer.
-                            <br>
-                            Find out more about me on my website: <br><a target="_blank" href="https://arafat-ar13.github.io/">It's right here</a>
-                        </p>
-                        {% if user.is_authenticated %}
-                            <a href="{% url 'todo-home' %}">
-                                Go back to managing tasks
-                            </a>
-                        {% endif %}
-                    </div>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
                 </div>
-            {% endif %}
-            {% if user.is_authenticated and request.path != "/about/" %}
-            {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+
+        {% if request.path == "/about/" %}
+            <div class="col-md-4">
+                <div class="content-section bg-dark">
+                    <h3 style="color:azure">About Me</h3>
+                    <p style="color:floralwhite">
+                        Hey! I am Arafat Khan
+                    </p>
+                    <p style="color:lightblue">
+                        I am a Python Developer who's learning how to print Hello World and aiming to be a Machine Learning
+                        engineer.
+                        <br>
+                        Find out more about me on my website: <br><a target="_blank"
+                            href="https://arafat-ar13.github.io/">It's right here</a>
+                    </p>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'todo-home' %}">
+                            Go back to managing tasks
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
     </main>
 
     <!-- Footer -->
@@ -101,7 +166,8 @@
         <footer style="background-color: rgb(23, 216, 174);" class="page-footer font-small">
 
             <!-- Copyright -->
-            <div class="footer-copyright text-center py-3">© 2020 Arafat Khan
+            <div class="footer-copyright text-center py-3">
+                © 2020 Arafat Khan
             </div>
             <!-- Copyright -->
 
@@ -113,9 +179,15 @@
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script> -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
     <script src='https://kit.fontawesome.com/a076d05399.js'></script>
+    <script src="../../../static/ToDo/js/index.js"></script>
 
 </body>
+
 </html>

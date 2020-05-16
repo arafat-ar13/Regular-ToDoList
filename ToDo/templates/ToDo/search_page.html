@@ -3,7 +3,7 @@
 {% load crispy_forms_tags %}
 
 <div class="content section">
-    <form method="POST">
+    <form method="get">
         {% csrf_token %}
         <fieldset class="form-group dark-mode-assist">
             <legend class="border-bottom mb-4">Search everything...</legend>
@@ -19,59 +19,69 @@
     <h1>We searched the whole app but got nothing! :(</h1>
 
 {% elif results %}
-    {% if results.matching_tasks %}
-    <center style="font-size:22px; background-color: cadetblue; color: 'black';">ToDos matched:</center>
-    <ul class="list-group content-section">
-        {% for result in results.matching_tasks %}
-            <li class="list-group-item dark-mode-assist-section big-list-item">
-                {% if result.is_checked %}
-                    <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'todo-detailed' result.title result.pk %}"><s>{{ result }}</s></a>
-                {% else %}
-                    <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'todo-detailed' result.title result.pk %}">{{ result }}</a>
-                {% endif %}
-            </li>
-        {% endfor %}
-    </ul>
-    {% endif %}
     
-    {% if results.matching_subtasks %}
-    <center style="font-size:22px; background-color: cadetblue; color: 'black';">SubTasks matched:</center>
-    <ul class="list-group content-section">
-        {% for result in results.matching_subtasks %}
-            <li class="list-group-item dark-mode-assist-section big-list-item">
+    <!-- Matching todos -->
+    {% if results.matching_tasks %}
+        <center style="font-size:22px; background-color: cadetblue; color: 'black';">ToDos matched:</center>
+        <ul class="list-group content-section">
+            {% for result in results.matching_tasks %}
                 <li class="list-group-item dark-mode-assist-section big-list-item">
-                    {% if result.done %}
-                        <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'todo-detailed' result.parent_task.title result.parent_task.pk %}"><s>{{ result }} in <b>{{ result.parent_task }}</b></s></a>
+                    {% if result.is_checked %}
+                        <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'todo-detailed' result.title result.pk %}"><s>{{ result }}</s></a>
                     {% else %}
-                        <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'todo-detailed' result.parent_task.title result.parent_task.pk %}">{{ result }} in <b>{{ result.parent_task }}</b></a>
+                        <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'todo-detailed' result.title result.pk %}">{{ result }}</a>
                     {% endif %}
                 </li>
-            </li>
-        {% endfor %}
-    </ul>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    
+    <!-- Matching subtasks -->
+    {% if results.matching_subtasks %}
+        <center style="font-size:22px; background-color: cadetblue; color: 'black';">SubTasks matched:</center>
+        <ul class="list-group content-section">
+            {% for result in results.matching_subtasks %}
+                <li class="list-group-item dark-mode-assist-section big-list-item">
+                    <li class="list-group-item dark-mode-assist-section big-list-item">
+                        {% if result.done %}
+                            <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'todo-detailed' result.parent_task.title result.parent_task.pk %}"><s>{{ result }} in <b>{{ result.parent_task }}</b></s></a>
+                        {% else %}
+                            <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'todo-detailed' result.parent_task.title result.parent_task.pk %}">{{ result }} in <b>{{ result.parent_task }}</b></a>
+                        {% endif %}
+                    </li>
+                </li>
+            {% endfor %}
+        </ul>
     {% endif %}
 
+    <!-- Matching notes -->
     {% if results.matching_notes %}
-    <center style="font-size:22px; background-color: cadetblue; color: 'black';">Notes matched:</center>
-    <ul class="list-group content-section">
-        {% for result in results.matching_notes %}
-            <li class="list-group-item dark-mode-assist-section big-list-item">
-                <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'todo-detailed' result.parent_task.title result.parent_task.pk %}">{{ result.content }}</b></a>
-            </li>
-        {% endfor %}
-    </ul>
+        <center style="font-size:22px; background-color: cadetblue; color: 'black';">Notes matched:</center>
+        <ul class="list-group content-section">
+            {% for result in results.matching_notes %}
+                <li class="list-group-item dark-mode-assist-section big-list-item">
+                    <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'todo-detailed' result.parent_task.title result.parent_task.pk %}">
+                        <b>{{ result.content }}</b>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
     {% endif %}
 
+    <!-- Matching lists -->
     {% if results.matching_lists %}
-    <center style="font-size:22px; background-color: cadetblue; color: 'black';">Lists matched:</center>
-    <ul class="list-group content-section">
-        {% for result in results.matching_lists %}
-            <li class="list-group-item dark-mode-assist-section big-list-item">
-                <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'tasklist-single-view' result.title result.pk %}">  {{ result }}</a>
-            </li>
-        {% endfor %}
-    </ul>
+        <center style="font-size:22px; background-color: cadetblue; color: 'black';">Lists matched:</center>
+        <ul class="list-group content-section">
+            {% for result in results.matching_lists %}
+                <li class="list-group-item dark-mode-assist-section big-list-item">
+                    <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;" href="{% url 'tasklist-single-view' result.title result.pk %}">
+                        {{ result }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
     {% endif %}
+
 {% endif %}
 
 {% endblock content %}

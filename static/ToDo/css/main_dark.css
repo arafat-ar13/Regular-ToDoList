@@ -36,7 +36,7 @@ body {
   .dark-mode-assist-section-outer {
     color: #ffffff;
     background: #15181a;
-    border: 1px solid #ccfa78;
+    border: 1px solid #087ecc;
   }
 
   ul {
@@ -63,7 +63,7 @@ body {
   .content-section {
     background: #1f1a0d;
     padding: 10px 20px;
-    border: 1px solid #ccfa78;
+    border: 1px solid cornflowerblue;
     border-radius: 3px;
     margin-bottom: 20px;
   }
