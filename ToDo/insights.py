@@ -37,7 +37,7 @@ def draw_bar_graph(user_todos_this_week, user):
     if user.profile.theme == "dark":
         plt.style.use("dark_background")
 
-    path = f"media/user_insights_graphs/{user}/graph_this_week.png"
+    path = f"media/users/{user}_{user.pk}/insights_graphs/graph_this_week.png"
 
     for todo in user_todos_this_week:
         day_completions[calendar.day_name[todo.date_completed.weekday()]] += 1
@@ -238,7 +238,7 @@ def render_insights(request):
         ready = "AI is still learning"
 
     img_exists = False
-    if os.path.isfile(f"media/user_insights_graphs/{user}/graph_this_week.png"):
+    if os.path.isfile(f"media/users/{user}_{user.pk}/insights_graphs/graph_this_week.png"):
         img_exists = True
 
     context = {

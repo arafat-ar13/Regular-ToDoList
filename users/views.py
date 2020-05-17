@@ -22,7 +22,7 @@ def register(request):
                 request, f"Your account has been created. You can now login.")
 
             # Creating a respective directory that will contain their weekly bar graphs
-            os.mkdir(f"../media/user_insights_graphs/{username}")
+            os.mkdir(f"../media/users/{username}_{form.instance.pk}")
 
             return redirect("login")
     else:

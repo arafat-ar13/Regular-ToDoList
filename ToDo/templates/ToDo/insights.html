@@ -206,7 +206,7 @@
     {% if img_exists %}
         <center>
             <h2>Let's visualize how many tasks you completed over the week</h2>
-            <img src="../../../media/user_insights_graphs/{{ request.user }}/graph_this_week.png">
+            <img src="../../../media/users/{{ request.user }}_{{ request.user.pk }}/insights_graphs/graph_this_week.png">
         </center>
     {% endif %}
 

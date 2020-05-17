@@ -292,7 +292,7 @@ function createTask() {
                 class="btn btn-outline-danger">
                     <i class="fas fa-trash"></i>
                 </button>
-                <button id="todo-important-${json.todo_pk}" onclick="toggleImportant('${json.todo_pk}', 'unmark')"
+                <button id="todo-important-${json.todo_pk}" onclick="toggleImportant('${json.todo_pk}', 'mark')"
                 style="float: right; margin-right:3px" class="btn btn-secondary">
                     <i class="fas fa-star"></i>
                 </button>

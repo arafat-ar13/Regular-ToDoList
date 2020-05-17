@@ -2,10 +2,13 @@ from django.contrib.auth.models import User
 from django.db import models
 from PIL import Image
 
+def get_user_dp_dir(instance, filename):
+    return f"users/{instance.user.username}_{instance.user.pk}/profile_pics/{filename}"
+
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    image = models.ImageField(default="default.jpg", upload_to="profile_pics")
+    image = models.ImageField(default="default.jpg", upload_to=get_user_dp_dir)
     theme = models.CharField(default="light", max_length=20)
     # The attributes below are used by the Insights Page to analyze the user
     insights_enabled = models.BooleanField(default=False)

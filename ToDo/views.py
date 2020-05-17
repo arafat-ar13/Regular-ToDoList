@@ -94,6 +94,19 @@ def todo_detail(request, title, pk):
         subtasks_completed = subtasks.filter(done=True).count()
         percentage = int((subtasks_completed/subtasks.count()) * 100)
 
+    # if request.method == "POST":
+    #     attachment_form = TaskAttachmentForm(request.POST, request.FILES)
+
+    #     print(request.FILES)
+    #     print(request.POST)
+
+    #     if attachment_form.is_valid():
+    #         attachment_form.instance.creator = request.user
+    #         attachment_form.save()
+        
+    # else:
+    #     attachment_form = TaskAttachmentForm()
+
     context = {
         "todo": todo,
         "note_form": ToDoNotesForm(),
