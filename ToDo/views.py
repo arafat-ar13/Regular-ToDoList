@@ -1,6 +1,7 @@
 import calendar
 import datetime
 import json
+import os
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -13,8 +14,8 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView
 
 from .forms import (ContactMeForm, DueDateForm, NewTaskForm, NewTaskListForm,
-                    SearchForm, SubTaskForm, ToDoNotesForm)
-from .models import Notes, SubTask, TaskList, ToDo
+                    SearchForm, SubTaskForm, ToDoNotesForm, TaskAttachmentForm)
+from .models import Notes, SubTask, TaskList, ToDo, Attachments
 
 
 # Handling error views
@@ -94,28 +95,31 @@ def todo_detail(request, title, pk):
         subtasks_completed = subtasks.filter(done=True).count()
         percentage = int((subtasks_completed/subtasks.count()) * 100)
 
-    # if request.method == "POST":
-    #     attachment_form = TaskAttachmentForm(request.POST, request.FILES)
+    if request.method == "POST":
+        attachment_form = TaskAttachmentForm(request.POST, request.FILES)
 
-    #     print(request.FILES)
-    #     print(request.POST)
+        if attachment_form.is_valid():
+            attachment_form.instance.parent_task = todo
+            attachment_form.save()
 
-    #     if attachment_form.is_valid():
-    #         attachment_form.instance.creator = request.user
-    #         attachment_form.save()
+            messages.success(request, "Your files were uploaded successfully")
         
-    # else:
-    #     attachment_form = TaskAttachmentForm()
+    else:
+        attachment_form = TaskAttachmentForm()
+
+    attachments = Attachments.objects.filter(parent_task=todo)
 
     context = {
         "todo": todo,
         "note_form": ToDoNotesForm(),
         "note": note,
         "subtask_form": SubTaskForm(),
+        "attachment_form": attachment_form,
         "subtasks": subtasks,
         "due_form": DueDateForm(),
         "title": todo.title,
-        "percentage": percentage
+        "percentage": percentage,
+        "attachments": attachments
     }
 
     return render(request, "ToDo/detailed_view.html", context=context)
@@ -387,6 +391,15 @@ def delete(request):
 
         if item_type == "todo":
             todo = ToDo.objects.get(pk=pk)
+
+            # removing this todos attachments from server
+            try:
+                for attachment in Attachments.objects.filter(parent_task=todo):
+                    os.remove(attachment.content.url)
+                    attachment.delete()
+            except:
+                pass
+
             todo.delete()
 
         elif item_type == "subtask":
@@ -413,6 +426,14 @@ def delete(request):
 
             # Delete child todos from the database
             for todo in ToDo.objects.filter(parent_list=tasklist):
+                # Also deleting any attachments those todos might have
+                try:
+                    for attachment in Attachments.objects.filter(parent_task=todo):
+                        os.remove(attachment.content.url)
+                        attachment.delete()
+                except:
+                    pass
+
                 todo.delete()
 
             tasklist.delete()
@@ -422,6 +443,13 @@ def delete(request):
             parent_task.due_date = None
             parent_task.due_date_color = None
             parent_task.save()
+
+        elif item_type == "attachment":
+            attachment = Attachments.objects.get(pk=pk)
+            attachment.delete()
+
+            if Attachments.objects.filter(parent_task=attachment.parent_task).count() == 0:
+                response_data["hide_attachments"] = True
 
         return HttpResponse(
             json.dumps(response_data),

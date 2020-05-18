@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 
-from .models import TaskList
+from .models import Attachments
 
 
 class NewTaskListForm(forms.Form):
@@ -33,6 +33,12 @@ class ToDoNotesForm(forms.Form):
 
 class SearchForm(forms.Form):
     query = forms.CharField(max_length=65, help_text="Search everything")
+
+
+class TaskAttachmentForm(forms.ModelForm):
+    class Meta:
+        model = Attachments
+        fields = ["content"]
 
 
 class ContactMeForm(forms.Form):

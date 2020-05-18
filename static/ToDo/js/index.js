@@ -230,6 +230,12 @@ function deleteItem(item_type, pk) {
             console.log("success"); // another sanity check
             if (json.hide_heading == "yes") {
                 document.getElementById("subtask-heading").style.display = "none"
+                document.getElementById("progress").style.display = "none"
+                document.getElementById("percentage").style.display = "none"
+            }
+
+            if (json.hide_attachments == true) {
+                document.getElementById("attachments-section").style.display = "none"
             }
         },
     });
@@ -255,6 +261,10 @@ function deleteItem(item_type, pk) {
     else if (item_type == "due_date") {
         document.getElementById("due-date-input").style.display = "block"
         document.getElementById("due-date-content").style.display = "none"
+    }
+
+    else if (item_type == "attachment") {
+        document.getElementById(`attachment-${pk}`).style.display = "none"
     }
 }
 

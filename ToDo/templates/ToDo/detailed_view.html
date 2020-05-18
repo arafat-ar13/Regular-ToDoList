@@ -1,6 +1,7 @@
 {% extends "ToDo/base.html" %}
 {% block content %}
 {% load crispy_forms_tags %}
+{% load filename %}
 
 <div class="content-section dark-mode-assist-section">
     <h1 style="text-align: center; margin-left: 33px;">
@@ -125,7 +126,6 @@
             </div>
         </div>
     </div>
-    <br>
 
     {% if subtasks %}
         <br><br>
@@ -187,7 +187,6 @@
 
         <center id="progress" style="font-size:23px; background-color: burlywood; color: 'black'; display: none">Your progress:</center>
         <center> <span id="percentage" style="font-size:10ch; color:lightseagreen"></span></center>
-        <br><br>
     {% endif %}
 
     <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample" role="button"
@@ -286,7 +285,91 @@
         <p id="notes-metadata">
         </p>
     </div>
+    <br><br><br>
+
+    <center style="font-size: 27px; background-color: burlywood; color: black;">Attachments</center>
+    <br>
+
+    {% if attachments %}
+    <div id="attachments-section" class="table-responsive dark-mode-assist-section">          
+        <table class="table dark-mode-assist-section">
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Uploaded on</th>
+                    <th>View/Download</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for attachment in attachments %}
+                    <tr id="attachment-{{ attachment.pk }}">
+                        <td>{{ attachment.content|getfilename }}</td>
+                        <td>{{ attachment.uploaded_on|date:"F d"}}</td>
+                        <td><a class="btn btn-success" href="{{ attachment.content.url }}">Click me</a></td>
+                        <td>
+                            <button style="font-size: 2.5ch;" data-toggle="modal" data-target="#exampleModalCenter{{ attachment.pk }}" class="btn btn-outline-danger">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <div class="modal fade" id="exampleModalCenter{{ attachment.pk }}" tabindex="-1" role="dialog"
+                    aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content dark-mode-assist-section">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="exampleModalLongTitle">Confirm the deletion</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to delete this attachment?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    <button data-dismiss="modal" onclick="deleteItem('attachment', {{ attachment.pk }})" type="submit"
+                                        class="btn btn-danger">Yes, I am sure</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <a class="btn btn-outline-info" data-toggle="collapse" href="#multiCollapseExample-attachments" role="button"
+        aria-expanded="false" aria-controls="multiCollapseExample">
+        Upload attachments
+    </a>
+    <div class="row">
+        <div class="col">
+            <div class="collapse multi-collapse" id="multiCollapseExample-attachments">
+                <br>
+                <div class="card card-body dark-mode-assist-section">
+                    <div class="content section">
+                        <form method="POST" name="attachment-{{ todo.pk }}" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <fieldset class="form-group dark-mode-assist">
+                                <legend class="border-bottom mb-4">Add documents</legend>
+                                {{ attachment_form|crispy }}
+                                <input type="hidden" name="title" value={{ todo.pk }}>
+                                <p id="hidden-parent-task-pk" style="display:none">{{ todo.pk }}</p>
+                            </fieldset>
+                            <div class="form-group">
+                                <button class="btn btn-outline-info" type="submit">Upload</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     
 </div>
+
+<br><br><br>
 
 {% endblock content %}
