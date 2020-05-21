@@ -26,8 +26,9 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include("ToDo.urls")),
-    path('about/', todo_views.about, name="todo-about"),
+    path('contact-me/', todo_views.contact_me, name="contact-me"),
     path('insights/', insights.render_insights, name="insights"),
+    path('new_2.0/', todo_views.new_ver2, name="new-v2"),
     path('register/', user_views.register, name="register"),
     path('login/', auth_views.LoginView.as_view(template_name="users/login.html", redirect_authenticated_user=True), name="login"),
     path('profile/', user_views.profile, name="profile"),
@@ -41,5 +42,5 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-handler500 = todo_views.handler500
 handler404 = todo_views.handler404
+handler500 = todo_views.handler500

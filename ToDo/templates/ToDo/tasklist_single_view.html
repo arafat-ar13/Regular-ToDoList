@@ -2,15 +2,27 @@
 {% block content %}
 {% load crispy_forms_tags %}
 
+<style>
+    {% if request.user_agent.is_mobile %}
+        .list-title {
+            font-size: 7ch;
+        }
+    {% else %}
+        .list-title {
+            font-size: 12ch;
+        }
+    {% endif %}
+</style>
+
 {% if tasklist != "Tasks" %}
-    <a href="{% url 'tasklist-edit' tasklist.pk %}"
-        style="font-size:12ch; text-decoration: none; font-weight: 900; font-family: cursive; color:slateblue">
+    <a class="list-title" href="{% url 'tasklist-edit' tasklist.pk %}"
+        style="text-decoration: none; text-overflow: ellipsis; font-weight: 900; color:slateblue">
         <center>
             {{ tasklist.title }}
         </center>
     </a>
 {% else %}
-    <a style="font-size:12ch; text-decoration: none; font-weight: 900; font-family: cursive; color:slateblue">
+    <a class="list-title" style="text-decoration: none; font-weight: 900; color:slateblue">
         <center>Tasks</center>
     </a>
 {% endif %}
@@ -31,7 +43,7 @@
 {% if todos %}
     <ul id="todo-list" class="list-group content-section">
         {% for todo in todos %}
-            <li id="todo-item-{{ todo.pk }}" class="list-group-item dark-mode-assist-section big-list-item">
+            <li id="todo-item-{{ todo.pk }}" class="list-group-item hoverable-item dark-mode-assist-section big-list-item">
                 <button style="float:left" onclick="toggleTodo({{ todo.pk }}, 'check', 'single-view')"
                     class="btn btn-outline-success">
                     <i class="fa fa-check"></i>
@@ -39,6 +51,25 @@
                 <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;"
                     href="{% url 'todo-detailed' todo.title todo.pk %}"> {{ todo.title }}
                 </a>
+                
+                {% if todo.num_of_subtasks != 0 %}
+                    <i title="Task has subtasks" style="font-size: 20px; color: aqua;" class="fas fa-tasks"></i> 
+                {% endif %}
+                {% if todo.has_notes %}
+                    <i title="Task has notes" style="font-size: 20px; color: coral;" class="far fa-sticky-note"></i>
+                {% endif %}
+                {% if todo.has_attachments %}
+                    <i title="Task has attachments" style="font-size: 20px; color:pink;" class="fas fa-paperclip"></i>
+                {% endif %}
+                {% if todo.due_date %}
+                    <br>
+                {% endif %}
+                {% if todo.due_date %}
+                    <i title="Task has due date" style="font-size: 20px; color: {{ todo.due_date_color }}" class="far fa-clock"></i>
+                    <small class="text-muted">{{ todo.due_date|date:"F d" }}</small>
+                {% endif %}
+
+
                 <button data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;"
                     class="btn btn-outline-danger">
                     <i class="fas fa-trash"></i>
@@ -95,7 +126,7 @@
                     <div class="card card-body dark-mode-assist-section">
                         <ul id="todo-list-completed" class="list-group content-section">
                             {% for todo in completed_todos %}
-                                <li id="todo-item-{{ todo.pk }}-completed" class="list-group-item dark-mode-assist-section big-list-item">
+                                <li id="todo-item-{{ todo.pk }}-completed" class="hoverable-item list-group-item dark-mode-assist-section big-list-item">
                                     <button style="float:left" onclick="toggleTodo({{ todo.pk }}, 'uncheck', 'single-view')"
                                         class="btn btn-success">
                                         <i class="fa fa-check"></i> 

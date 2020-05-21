@@ -16,16 +16,68 @@ from django.views.generic import CreateView, ListView, UpdateView
 from .forms import (ContactMeForm, DueDateForm, NewTaskForm, NewTaskListForm,
                     SearchForm, SubTaskForm, ToDoNotesForm, TaskAttachmentForm)
 from .models import Notes, SubTask, TaskList, ToDo, Attachments
+from .templatetags.filename import getfilename
 
 
 # Handling error views
-def handler500(request, *args):
-    return render(request, 'ToDo/Error Pages/500.html', status=500)
-
 
 def handler404(request, *args):
     return render(request, 'ToDo/Error Pages/500.html', status=404)
 
+def handler500(request, *args):
+    return render(request, 'ToDo/Error Pages/500.html', status=500)
+
+def view_err(request):
+    return render(request, 'ToDo/Error Pages/500.html')
+
+
+def new_ver2(request):
+    " A simple view function to render what new changes we have made in the 2.0 of the app "
+    return render(request, "ToDo/new_in_2.0.html")
+
+
+def home(request):
+    if request.user.is_authenticated:
+        user_lists = TaskList.objects.filter(owner=request.user)
+
+        if request.method == "POST":
+            list_form = NewTaskListForm(request.POST)
+
+            if list_form.is_valid():
+                list_title = list_form.cleaned_data.get("title")
+
+                if list_title in ["Tasks", "tasks", "Important", "important"]:
+                    messages.info(request, "Sorry, this is a reserved name")
+                    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+                new_list = TaskList(title=list_title)
+                new_list.owner = request.user
+                new_list.save()
+
+                messages.success(
+                    request, "Your shiny new list is ready to be used")
+                return redirect("tasklist-single-view", list_title, new_list.pk)
+
+        else:
+            list_form = NewTaskListForm()
+
+        # Passing 'yes' if there should be an Insights highlight
+        insights_highlight = False
+        today = datetime.datetime.today().date()
+        if (today - request.user.profile.last_insights_date).days >= 7:
+            insights_highlight = True
+
+        context = {
+            "user_lists": user_lists,
+            "list_form": list_form,
+            "insights_highlight": insights_highlight,
+            "today_name": calendar.day_name[datetime.datetime.today().weekday()]
+        }
+    
+    else:
+        context = {}
+
+    return render(request, "ToDo/home.html", context=context)
 
 @login_required
 def search(request):
@@ -53,14 +105,22 @@ def search(request):
                 if note.parent_task in user_todos:
                     matching_notes.append(note)
 
+            matching_attachments = []
+            for attachment in Attachments.objects.all():
+                if search_query.lower() in getfilename(attachment.content).lower() and attachment.parent_task in user_todos:
+                    matching_attachments.append(attachment)
+
             results = {
                 "matching_tasks": matching_tasks,
                 "matching_lists": matching_lists,
                 "matching_subtasks": matching_subtasks,
-                "matching_notes": matching_notes
+                "matching_notes": matching_notes,
+                "matching_attachments": matching_attachments,
             }
 
-            if len(matching_tasks) == 0 and len(matching_subtasks) == 0 and len(matching_lists) == 0 and len(matching_notes) == 0:
+            print(matching_attachments)
+
+            if len(matching_tasks) == 0 and len(matching_subtasks) == 0 and len(matching_lists) == 0 and len(matching_notes) == 0 and len(matching_attachments) == 0:
                 results = "got nothing"
 
     else:
@@ -89,6 +149,18 @@ def todo_detail(request, title, pk):
     except:
         note = Notes()
 
+    
+    if todo.due_date is not None:
+        today = datetime.datetime.today()
+        if todo.due_date.date() == today.date():
+            todo.due_date_color = "blue"
+        elif todo.due_date.date() > today.date():
+            todo.due_date_color = "green"
+        elif todo.due_date.date() < today.date():
+            todo.due_date_color = "red"
+
+        todo.save()
+
     # Task progress percentage
     percentage = 0
     if subtasks:
@@ -101,6 +173,10 @@ def todo_detail(request, title, pk):
         if attachment_form.is_valid():
             attachment_form.instance.parent_task = todo
             attachment_form.save()
+
+            if not todo.has_attachments:
+                todo.has_attachments = True
+                todo.save()
 
             messages.success(request, "Your files were uploaded successfully")
         
@@ -125,7 +201,7 @@ def todo_detail(request, title, pk):
     return render(request, "ToDo/detailed_view.html", context=context)
 
 
-def about(request):
+def contact_me(request):
     if request.method == "POST":
         contact_form = ContactMeForm(request.POST)
 
@@ -173,51 +249,10 @@ def about(request):
 
     context = {
         "contact_form": contact_form,
-        "title": "About the App"
+        "title": "Contact Me"
     }
 
-    return render(request, "ToDo/about.html", context=context)
-
-
-@login_required
-def view_taskslists(request):
-    user_lists = TaskList.objects.filter(owner=request.user)
-
-    if request.method == "POST":
-        list_form = NewTaskListForm(request.POST)
-
-        if list_form.is_valid():
-            list_title = list_form.cleaned_data.get("title")
-
-            if list_title in ["Tasks", "tasks", "Important", "important"]:
-                messages.info(request, "Sorry, this is a reserved name")
-                return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-            new_list = TaskList(title=list_title)
-            new_list.owner = request.user
-            new_list.save()
-
-            messages.success(
-                request, "Your shiny new list is ready to be used")
-            return redirect("tasklist-single-view", list_title, new_list.pk)
-
-    else:
-        list_form = NewTaskListForm()
-
-    # Passing 'yes' if there should be an Insights highlight
-    insights_highlight = False
-    today = datetime.datetime.now(datetime.timezone.utc).date()
-    if (today - request.user.profile.last_insights_date).days >= 7:
-        insights_highlight = True
-
-    context = {
-        "user_lists": user_lists,
-        "list_form": list_form,
-        "insights_highlight": insights_highlight,
-        "today_name": calendar.day_name[datetime.datetime.today().weekday()]
-    }
-
-    return render(request, "ToDo/tasklists_overview.html", context=context)
+    return render(request, "ToDo/contact_me.html", context=context)
 
 
 @login_required
@@ -393,14 +428,13 @@ def delete(request):
             todo = ToDo.objects.get(pk=pk)
 
             # removing this todos attachments from server
-            try:
-                for attachment in Attachments.objects.filter(parent_task=todo):
-                    os.remove(attachment.content.url)
-                    attachment.delete()
-            except:
-                pass
+            for attachment in Attachments.objects.filter(parent_task=todo):
+                attachment.delete()
 
             todo.delete()
+
+            if ToDo.objects.filter(parent_list=todo.parent_list, is_checked=False).count() == 0:
+                response_data["show_tasks"] = False
 
         elif item_type == "subtask":
             subtask = SubTask.objects.get(pk=pk)
@@ -427,12 +461,8 @@ def delete(request):
             # Delete child todos from the database
             for todo in ToDo.objects.filter(parent_list=tasklist):
                 # Also deleting any attachments those todos might have
-                try:
-                    for attachment in Attachments.objects.filter(parent_task=todo):
-                        os.remove(attachment.content.url)
-                        attachment.delete()
-                except:
-                    pass
+                for attachment in Attachments.objects.filter(parent_task=todo):
+                    attachment.delete()
 
                 todo.delete()
 
@@ -450,6 +480,9 @@ def delete(request):
 
             if Attachments.objects.filter(parent_task=attachment.parent_task).count() == 0:
                 response_data["hide_attachments"] = True
+
+                attachment.parent_task.has_attachments = False
+                attachment.parent_task.save()
 
         return HttpResponse(
             json.dumps(response_data),
@@ -532,7 +565,7 @@ def toggle_todo(request):
             todo.date_completed = None
         else:
             todo.is_checked = True
-            todo.date_completed = datetime.datetime.now()
+            todo.date_completed = datetime.datetime.today()
 
         todo.save()
 
@@ -547,10 +580,10 @@ def toggle_todo(request):
 
         # Checking if the todo was important or not
         if todo.important:
-            response_data["important_op"] = "mark"
+            response_data["important_op"] = "unmark"
             response_data["important_class"] = "btn btn-warning"
         else:
-            response_data["important_op"] = "unmark"
+            response_data["important_op"] = "mark"
             response_data["important_class"] = "btn btn-secondary"
 
         # Checking if we should display "Completed Tasks"
@@ -568,6 +601,33 @@ def toggle_todo(request):
             show_tasks = False
 
         response_data["show_tasks"] = show_tasks
+
+
+        # Checking if we should show task metadata
+        if todo.num_of_subtasks != 0 or todo.due_date is not None or todo.has_notes or todo.has_attachments:
+            response_data["space_filler"] = "<br>"
+        else:
+            response_data["space_filler"] = "<span></span>"
+
+        if todo.num_of_subtasks != 0:
+            response_data["show_subtasks_icon"] = "block"
+        else:
+            response_data["show_subtasks_icon"] = "none"
+        if todo.has_notes:
+            response_data["show_notes_icon"] = "block"
+        else:
+            response_data["show_notes_icon"] = "none"
+        if todo.has_attachments:
+            response_data["show_attachments_icon"] = "block"
+        else:
+            response_data["show_attachments_icon"] = "none"
+
+        if todo.due_date is not None:
+            response_data["show_due_date_icon"] = "block"
+            response_data["due_date"] = todo.due_date.strftime("%b %d")
+            response_data["due_date_color"] = todo.due_date_color
+        else:
+            response_data["show_due_date_icon"] = "none"
 
         return HttpResponse(
             json.dumps(response_data),
@@ -647,7 +707,7 @@ class ToDoNextUpView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        today = datetime.datetime.now()
+        today = datetime.datetime.today()
         tomorrow = today + datetime.timedelta(days=1)
 
         todos_earlier = []
@@ -655,7 +715,7 @@ class ToDoNextUpView(LoginRequiredMixin, ListView):
         todos_tomorrow = []
         todos_later = []
 
-        for todo in ToDo.objects.filter(creator=self.request.user, is_checked=False):
+        for todo in ToDo.objects.filter(creator=self.request.user, is_checked=False).order_by("due_date"):
             if todo.due_date is not None:
                 if todo.due_date.date() == today.date():
                     todos_today.append(todo)
@@ -672,6 +732,22 @@ class ToDoNextUpView(LoginRequiredMixin, ListView):
         context["todos_later"] = todos_later
 
         return context
+
+
+class ToDoFilesView(LoginRequiredMixin, ListView):
+    model = Attachments
+    template_name = "ToDo/files_view.html"
+    ordering = ["-uploaded_on"]
+    context_object_name = "attachments"
+
+    def get_queryset(self):
+        query_set = []
+        for attachment in Attachments.objects.all():
+            if attachment.parent_task.creator == self.request.user:
+                query_set.append(attachment)
+
+        return query_set
+
 
 
 class TodoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -770,7 +846,7 @@ class TaskListUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             tasklist = TaskList.objects.get(pk=self.kwargs.get("pk"))
             return True if tasklist.owner == self.request.user else False
         except:
-            False
+            return False
 
     def handle_no_permission(self):
         return render(self.request, "ToDo/restrict_access.html")

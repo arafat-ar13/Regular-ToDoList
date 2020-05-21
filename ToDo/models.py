@@ -28,6 +28,7 @@ class ToDo(models.Model):
     date_completed = models.DateTimeField(null=True, blank=True)
     has_notes = models.BooleanField(default=False)
     important = models.BooleanField(default=False)
+    has_attachments = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
@@ -58,7 +59,7 @@ def get_attachment_dir(instance, filename):
 
 
 class Attachments(models.Model):
-    content = models.FileField(null=True, blank=True, upload_to=get_attachment_dir, help_text="Add important documents or pictures")
+    content = models.FileField(upload_to=get_attachment_dir, help_text="Add important documents or pictures")
     parent_task = models.ForeignKey(ToDo, on_delete=models.CASCADE)
     uploaded_on = models.DateTimeField(auto_now_add=True)
 

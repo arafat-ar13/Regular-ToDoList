@@ -8,13 +8,16 @@
     {% else %}
         <div class="content-section">
     {% endif %}
-    <div class="media">
-        <img class="rounded-circle account-img" src="{{ user.profile.image.url }}">
-        <div class="media-body">
-            <h2 class="account-heading">{{ user.username }}</h2>
-            <p class="text-secondary">{{ user.email }}</p>
-            <p class="text-secondary">Member since: {{ user.date_joined|date:"F d, Y" }}</p>
-        </div>
+    <div>
+        <center>
+            <img style="width: 250; height: 250;" class="rounded-circle account-img" src="{{ user.profile.image.url }}">
+            <br>
+            <div class="media-body">
+                <h2 class="account-heading">{{ user.username }}</h2>
+                <p class="text-secondary">{{ user.email }}</p>
+                <p class="text-secondary">Member since: {{ user.date_joined|date:"F d, Y" }}</p>
+            </div>
+        </center>
     </div>
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}

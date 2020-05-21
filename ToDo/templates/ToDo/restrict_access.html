@@ -2,6 +2,15 @@
 {% load static %}
 {% block content %}
 
-<h1 style="background-color: red;">Your access has been denied!</h1>
+<center style="color: red; font-size: 30ch; font-family: fantasy;">
+    <i class="far fa-angry"></i>
+    <h1 style="color: red;">Your access to this page has been denied!</h1>
+</center>
+
+<br>
+<center>
+<button onclick="window.location.href='{% url 'todo-home' %}'" class="btn btn-success btn-lg">Stay within your limits</button>
+</center>
+
 
 {% endblock content %}

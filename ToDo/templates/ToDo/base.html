@@ -13,10 +13,18 @@
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Balsamiq+Sans&display=swap" rel="stylesheet">
 
-    {% if user.profile.theme == "dark" %}
-        <link rel="stylesheet" id="css_changer" type="text/css" href="{% static 'ToDo/css/main_dark.css' %}">
-    {% elif user.profile.theme == "light" %}
+    {% if request.user.is_authenticated %}
+
+        {% if user.profile.theme == "dark" %}
+            <link rel="stylesheet" id="css_changer" type="text/css" href="{% static 'ToDo/css/main_dark.css' %}">
+        {% elif user.profile.theme == "light" %}
+            <link rel="stylesheet" id="css_changer" type="text/css" href="{% static 'ToDo/css/main_light.css' %}">
+        {% endif %}
+
+    {% else %}
         <link rel="stylesheet" id="css_changer" type="text/css" href="{% static 'ToDo/css/main_light.css' %}">
     {% endif %}
 

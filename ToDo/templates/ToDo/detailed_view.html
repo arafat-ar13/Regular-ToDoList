@@ -6,30 +6,38 @@
 <div class="content-section dark-mode-assist-section">
     <h1 style="text-align: center; margin-left: 33px;">
         {% if not todo.is_checked %}
+            <a id="todo-title-{{ todo.pk }}" style="color:lightskyblue; text-decoration: none;" href="{% url 'todo-edit' todo.pk %}"> 
+                {{ todo.title }}
+            </a>
+            {% if request.user_agent.is_mobile %}
+                <br>
+            {% endif %}
             <button id="todo-btn-{{ todo.pk }}" style="float:left; margin-top: 13px;" onclick="toggleTodo('{{ todo.pk }}', 'check', 'detail-view')"
                 class="btn btn-outline-success">
                 <i class="fa fa-check"></i>
             </button>
-            <a id="todo-title-{{ todo.pk }}" style="color:lightskyblue; text-decoration: none;" href="{% url 'todo-edit' todo.pk %}"> 
-                {{ todo.title }}
-            </a>
         {% else %}
-            <button id="todo-btn-{{ todo.pk }}" style="float:left; margin-top: 13px;" onclick="toggleTodo('{{ todo.pk }}', 'uncheck', 'detail-view')"
-                class="btn btn-success">
-                <i class="fa fa-check"></i>
-            </button>
             <a id="todo-title-{{ todo.pk }}" style="color:lightskyblue; text-decoration: none;" href="{% url 'todo-edit' todo.pk %}">
                 <s>{{ todo.title }}</s> 
             </a>
+            {% if request.user_agent.is_mobile %}
+                <br>
+            {% endif %}
+            <button id="todo-btn-{{ todo.pk }}" style="float:left; margin-top: 13px;" onclick="toggleTodo('{{ todo.pk }}', 'check', 'detail-view')"
+                class="btn btn-outline-success">
+                <i class="fa fa-check"></i>
+            </button>
         {% endif %}
 
         {% if todo.important %}
             <button id="todo-important-{{ todo.pk }}" onclick="toggleImportant({{ todo.pk }}, 'unmark')"
-                style="float: right; margin-right:3px" class="btn btn-warning"><i class="fas fa-star"></i>
+                style="float: right; margin-top:13px; margin-right: 3px;" class="btn btn-warning">
+                <i class="fas fa-star"></i>
             </button>
         {% else %}
-            <button id="todo-important-{{ todo.pk }}" onclick="toggleImportant({{ todo.pk }}, 'mark')"
-                style="float: right; margin-right:3px" class="btn btn-secondary"><i class="fas fa-star"></i>
+            <button id="todo-important-{{ todo.pk }}" onclick="toggleImportant({{ todo.pk }}, 'unmark')"
+                style="float: right; margin-top:13px; margin-right: 3px;" class="btn btn-warning">
+                <i class="fas fa-star"></i>
             </button>
         {% endif %}
 
@@ -134,7 +142,7 @@
         <ul id="subtask-list" style="padding-bottom: 22px;">
             {% for subtask in subtasks %}
                 {% if not subtask.done %}
-                    <li class="content-section" id="subtask-items-{{ subtask.pk }}" style="font-size: 23px">
+                    <li class="content-section hoverable-item" id="subtask-items-{{ subtask.pk }}" style="font-size: 23px">
                         <button id="subtask-btn-{{ subtask.pk }}" onclick="toggleSubtask({{ subtask.pk }}, 'check')"
                             class="btn btn-outline-success">
                             <i class="fa fa-check"></i>
@@ -142,15 +150,12 @@
                         <a id="subtask-title-{{ subtask.pk }}" style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}">
                             {{ subtask.title }} 
                         </a>
-                        {% if request.user_agent.is_mobile %}
-                            <br>
-                        {% endif %}
                         <button onclick="deleteItem('subtask', {{ subtask.pk }})" type="submit" 
                             style="float: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i>
                         </button>
                     </li>
                 {% else %}
-                    <li class="content-section" id="subtask-items-{{ subtask.pk }}" style="font-size: 23px">
+                    <li class="content-section hoverable-item" id="subtask-items-{{ subtask.pk }}" style="font-size: 23px">
                         <button id="subtask-btn-{{ subtask.pk }}" onclick="toggleSubtask({{ subtask.pk }}, 'uncheck')"
                             class="btn btn-success">
                             <i class="fa fa-check"></i>
@@ -159,9 +164,6 @@
                             href="{% url 'todo-edit-subtask' subtask.pk %}"> 
                             {{ subtask.title }} 
                         </a>
-                        {% if request.user_agent.is_mobile %}
-                            <br>
-                        {% endif %}
                         <button onclick="deleteItem('subtask', {{ subtask.pk }})" type="submit" 
                             style="float: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i>
                         </button>
@@ -287,7 +289,7 @@
     </div>
     <br><br><br>
 
-    <center style="font-size: 27px; background-color: burlywood; color: black;">Attachments</center>
+    <center style="font-size: 27px; background-color: burlywood; color: 'black';">Attachments</center>
     <br>
 
     {% if attachments %}
@@ -303,10 +305,10 @@
             </thead>
             <tbody>
                 {% for attachment in attachments %}
-                    <tr id="attachment-{{ attachment.pk }}">
+                    <tr class="hoverable-item dark-mode-assist-section" id="attachment-{{ attachment.pk }}">
                         <td>{{ attachment.content|getfilename }}</td>
                         <td>{{ attachment.uploaded_on|date:"F d"}}</td>
-                        <td><a class="btn btn-success" href="{{ attachment.content.url }}">Click me</a></td>
+                        <td><a class="btn btn-outline-success" href="{{ attachment.content.url }}">Click me <i class="fas fa-download"></i></a></td>
                         <td>
                             <button style="font-size: 2.5ch;" data-toggle="modal" data-target="#exampleModalCenter{{ attachment.pk }}" class="btn btn-outline-danger">
                                 <i class="fa fa-trash"></i>
@@ -359,7 +361,7 @@
                                 <p id="hidden-parent-task-pk" style="display:none">{{ todo.pk }}</p>
                             </fieldset>
                             <div class="form-group">
-                                <button class="btn btn-outline-info" type="submit">Upload</button>
+                                <button class="btn btn-outline-info btn-lg" type="submit">Upload <i class="fas fa-upload"></i></button>
                             </div>
                         </form>
                     </div>

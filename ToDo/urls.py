@@ -2,12 +2,13 @@ from django.urls import path
 
 from . import views
 from .views import (SubtaskUpdateView, TaskListUpdateView, TodoImportantView,
-                    ToDoNextUpView, ToDoNotesUpdateView, TodoUpdateView)
+                    ToDoNextUpView, ToDoNotesUpdateView, TodoUpdateView, ToDoFilesView)
 
 urlpatterns = [
-    path('', views.view_taskslists, name="todo-home"),
+    path('', views.home, name="todo-home"),
     path('todo/important/', TodoImportantView.as_view(), name="todo-important"),
     path('todo/next_up/', ToDoNextUpView.as_view(), name="todo-next-up"),
+    path('todo/files/', ToDoFilesView.as_view(), name="todo-files"),
     path('todo/toggle_theme/', views.toggle_theme, name="toggle-theme"),
     path('todo/toggle_task/', views.toggle_todo, name="todo-toggle"),
     path('todo/toggle_important/', views.toggle_important_task, name="todo-toggle-important"),
@@ -19,9 +20,9 @@ urlpatterns = [
     path('tasklists/edit/<int:pk>/', TaskListUpdateView.as_view(), name="tasklist-edit"),
     path('tasklists/<title>/<int:pk>/', views.tasklist_single_view, name="tasklist-single-view"),
     path('tasklists/<title>/', views.tasklist_single_view, name="tasklist-single-view-default"),
-    path('tasklists/', views.view_taskslists, name="view-tasklists"),
     path('search/', views.search, name="search"),
     path('create/', views.create, name="create"),
     path('delete/', views.delete, name='delete-item'),
+    path('view_err/', views.view_err, name="view-err")
 
 ]

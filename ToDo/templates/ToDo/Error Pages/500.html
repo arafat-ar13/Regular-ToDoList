@@ -2,6 +2,20 @@
 {% load static %}
 {% block content %}
 
-<h1>You've hit upon a bad rock! The page you're trying to access is not available at the moment</h1>
+<h1 style="text-align: center; font-family: fantasy; color:orangered" class="content-section dark-mode-assist-section">
+    <i style="font-size: 10ch; text-align: center;" class="fas fa-exclamation-triangle"></i>
+    <br>
+    You've hit upon a bad rock! The page you're trying to access is not available at the moment
+    <br><br>
+    This could be a server error or a bug that I am yet to find or you have just landed upon a page that 
+    does not exist.
+    <br><br>
+    Worry not! Get back to managing your tasks.
+</h1>
+
+<center>
+<button onclick="window.location.href='{% url 'todo-home' %}'" class="btn btn-success btn-lg">Get back to safety</button>
+</center>
+<br><br>
 
 {% endblock content %}

@@ -37,6 +37,11 @@ def draw_bar_graph(user_todos_this_week, user):
     if user.profile.theme == "dark":
         plt.style.use("dark_background")
 
+    # Checking if this user's 'insights_graphs' dir exists or not
+    if not os.path.exists(f"media/users/{user}_{user.pk}/insights_graphs/"):
+        # If it doesn't, then we'll create one for them
+        os.mkdir(f"media/users/{user}_{user.pk}/insights_graphs/")
+
     path = f"media/users/{user}_{user.pk}/insights_graphs/graph_this_week.png"
 
     for todo in user_todos_this_week:
@@ -65,7 +70,7 @@ def draw_bar_graph(user_todos_this_week, user):
 
 @login_required
 def render_insights(request):
-    today = datetime.datetime.now(datetime.timezone.utc)
+    today = datetime.datetime.today()
     user = User.objects.get(username=request.user.username)
     user_todos = ToDo.objects.filter(creator=user)
 

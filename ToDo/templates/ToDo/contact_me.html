@@ -1,0 +1,26 @@
+{% extends "ToDo/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block content %}
+
+
+<div class="jumbotron dark-mode-assist-section-outer">
+    <h1 class="display-4">Hello, world!</h1>
+    <p1>Is there something wrong or is there a feature request? Please let me know and I will be very happy.</p1>
+</div>
+
+<div class="content section">
+    <form method="POST">
+        {% csrf_token %}
+        <fieldset class="form-group dark-mode-assist">
+            <legend class="border-bottom mb-4">Contact me</legend>
+            {{ contact_form|crispy }}
+        </fieldset>
+        <div class="form-group">
+            <button class="btn btn-outline-info" type="submit">Send</button>
+        </div>
+    </form>
+</div>
+
+
+{% endblock content %}

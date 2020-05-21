@@ -1,0 +1,148 @@
+{% extends "ToDo/base.html" %}
+{% block content %}
+{% load static %}
+
+<center>
+    <img style="width: 50%;" src="{% static 'favicon-1024.png' %}">
+</center>
+<br><br>
+
+<center>
+    <h2>
+    {% if request.user.is_authenticated %}
+        Hey, {{ request.user }}! (like our new logo?)
+    {% else %}
+        Hey!
+    {% endif %}
+    <br><br>
+    For the past month I have been working real hard on developing the 2nd version of this productivity app.
+    At first when the app was made, I called it a "Simple ToDo List" app that really was ... simple. But now it's
+    much more than that. It has got tons of updates, security patches, new features both on server and clide side.
+    <br><br>
+    Every aspect of the app was taken apart and coded differently for the new upgrade. Please explore the new features below.
+    </h2>
+
+    <br><br><br>
+
+</center>    
+
+<div class="list-group content-section dark-mode-assist-section" id="ux-changes">
+    <h1 style="text-align: center; font-weight: bolder; font-size:12ch; ">UX Changes</h1>
+    <br><br>
+    
+    <button type="button" class="list-group-item list-group-item-action dark-mode-assist-section">
+        <p1 style="float: right; padding-top: 35px; font-size:3ch">Google Fonts to make text look beautiful</p1>
+        <img src="{% static 'google_fonts_logo.png' %}" style="float: left; width: 40%">
+    </button>
+    <button type="button" class="list-group-item list-group-item-action dark-mode-assist-section">
+        <p1 style="float: left; padding-top: 35px; font-size:3ch">
+            Bootstrap CSS to design every HTML element. It is used <br> to give volume to various corners of this app
+            <br> so it feels appealing to the user.
+        </p1>
+        <img src="{% static 'bootstrap_logo.png' %}" style="float: right; width: 40%">
+    </button>
+    <button type="button" class="list-group-item list-group-item-action dark-mode-assist-section">
+        <p1 style="float: right; padding-top: 35px; font-size:3ch">FontAwesome icons are everywhere in this app!</p1>
+        <img src="{% static 'font_awesome_logo.png' %}" style="float: left; width: 40%">
+    </button>
+    <button type="button" class="list-group-item list-group-item-action dark-mode-assist-section">
+        <p1 style="float: right; padding-top: 35px; font-size:3ch">A completely redesigned interface which empowers users to be more productive</p1>
+    </button>
+</div>
+
+<br><br><br>
+<div class="list-group content-section dark-mode-assist-section" id="new-features">
+    <h1 style="text-align: center; font-weight: bolder; font-size:12ch;">New Features</h1>
+    <br><br>
+    
+    <button type="button" class="list-group-item list-group-item-action dark-mode-assist-section">
+        <p1 style="text-align: left; padding-top: 35px; font-size:3ch">
+            <b>Introduction TaskLists</b>
+            We introduced SubTasks months ago, but users also want to create lists of tasks. That is what we have done here
+            you can now create lists like "Shopping List" or "Homework List" so that you can stay on top of your schedule. 
+            Every user has a default "Tasks" list which is meant to add everyday tasks.
+        <i class="fas fa-clipboard-list" style="float: right; font-size: 13ch; color:crimson"></i>
+        </p1>
+    </button>
+    <button type="button" class="list-group-item list-group-item-action dark-mode-assist-section">
+        <p1 style="text-align: right; padding-top: 35px; font-size:3ch">
+            <b>Introducing Search</b> We know it can be difficult to find your way through the maze of tasks and notes and whatnot you
+            have got. So we created this feature to let you quickly find what you need with blazing fast results.  
+        <i class="fas fa-search" style="float: left; font-size: 13ch; color:darkcyan"></i>
+        </p1>
+    </button>
+    <button type="button" class="list-group-item list-group-item-action dark-mode-assist-section">
+        <p1 style="text-align: left; padding-top: 35px; font-size:3ch">
+            <b>Introduction Attachments</b>
+            Having subtasks and notes and due date was good enough. But there was this one thing that nails down the 
+            productivity meter. Now, you can attachment important documents and files to your tasks and view them conveniently.  
+        <i class="fas fa-paperclip" style="float: right; font-size: 13ch; color:indianred"></i>
+        </p1>
+    </button>
+    <button type="button" class="list-group-item list-group-item-action dark-mode-assist-section">
+        <p1 style="text-align: right; padding-top: 35px; font-size:3ch">
+            <b>Improved Insights</b>
+            The Insights feature was pretty amazing already. But we improved it! It now digs even deeper and finds out 
+            more about your behavior so you can see how productive you were the whole week.
+            Also, we have used Matplotlib integration to draw a bar graph of how many tasks you completed over the week.
+            Now isn't that cool!!
+        <i class="fas fa-chart-bar" style="float: left; font-size: 13ch; color:khaki"></i>
+        </p1>
+    </button>
+    <button type="button" class="list-group-item list-group-item-action dark-mode-assist-section">
+        <p1 style="text-align: left; padding-top: 35px; font-size:3ch">
+            <b>The app is now fully asynchronous</b>
+            Before, every action a user took required the page to be reloaded. But from now on, I have used JavaScript with AJAX
+            to directly call backend Python functions via POST or GET requests which will make database changes and send a silent response
+            back, all in a heartbeat without any refresh.
+            Python and Django + JavaScript and AJAX = Sweetness overload
+            <i class="fab fa-js-square" style="float: right; font-size: 13ch; color:rgb(238, 238, 23)"></i>
+            <i class="fab fa-python" style="float: left; font-size: 13ch; color:rgb(48, 23, 216)"></i>
+        </p1>
+    </button>
+</div>
+
+<br><br><br>
+<div class="list-group content-section dark-mode-assist-section" id="new-features">
+    <h1 style="text-align: center; font-weight: bolder; font-size:12ch;">Smart new pages</h1>
+    <center>
+    <button type="button" class="list-group-item list-group-item-action dark-mode-assist-section">
+        <i class="far fa-calendar-alt" style="font-size: 13ch; color:lightgreen"></i>
+        <br>
+        <p1 style="padding-top: 35px; font-size:3ch">
+            Stay ahead of the game with our new "Next Up" feature which will smartly organize tasks based on when you need them
+            done
+        </p1>
+    </button>
+    <button type="button" class="list-group-item list-group-item-action dark-mode-assist-section">
+        <i class="fas fa-star" style="font-size: 13ch; color:yellowgreen"></i>
+        <br>
+        <p1 style="padding-top: 35px; font-size:3ch">
+            See all your important tasks in one place so you know what needs your attention
+        </p1>
+    </button>
+    <button type="button" class="list-group-item list-group-item-action dark-mode-assist-section">
+        <i class="fas fa-file" style="font-size: 13ch; color:saddlebrown"></i>
+        <br>
+        <p1 style="padding-top: 35px; font-size:3ch">
+            You can upload attachments to many tasks but getting the right one on the right time is important.
+            So we have this page where you can view all your files.
+        </p1>
+    </button>
+    </center>
+</div>
+
+
+<br><br>
+<center style="font-size: 2ch">
+    Thank you so much for your attention. Hope you liked all the features and are excited the explore the app.
+    <button class="btn btn-lg btn-outline-info" onclick="window.location.href='{% url 'todo-home' %}'">Go to your home page</button>
+</center>
+<br>
+
+<center>
+    <img style="width: 50%;" src="{% static 'favicon-1024.png' %}">
+</center>
+<br><br>
+
+{% endblock content %}

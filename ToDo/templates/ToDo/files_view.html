@@ -1,0 +1,61 @@
+{% extends "ToDo/base.html" %}
+{% block content %}
+{% load static %}
+{% load filename %}
+
+<center class="dark-mode-assist" style="font-size: 5ch">Your important files are here</center>
+<br><br>
+
+{% if attachments %}
+<div id="attachments-section" class="table-responsive dark-mode-assist-section">          
+    <table class="table dark-mode-assist-section">
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>ToDo</th>
+                <th>Uploaded on</th>
+                <th>View/Download</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for attachment in attachments %}
+                <tr class="hoverable-item dark-mode-assist-section" id="attachment-{{ attachment.pk }}">
+                    <td>{{ attachment.content|getfilename }}</td>
+                    <td><a href="{% url 'todo-detailed' attachment.parent_task attachment.parent_task.pk %}">{{ attachment.parent_task }}</a></td>
+                    <td>{{ attachment.uploaded_on|date:"F d"}}</td>
+                    <td><a class="btn btn-outline-success" href="{{ attachment.content.url }}">Click me <i class="fas fa-download"></i></a></td>
+                    <td>
+                        <button style="font-size: 2.5ch;" data-toggle="modal" data-target="#exampleModalCenter{{ attachment.pk }}" class="btn btn-outline-danger">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                <div class="modal fade" id="exampleModalCenter{{ attachment.pk }}" tabindex="-1" role="dialog"
+                aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content dark-mode-assist-section">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalLongTitle">Confirm the deletion</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to delete this attachment?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                <button data-dismiss="modal" onclick="deleteItem('attachment', {{ attachment.pk }})" type="submit"
+                                    class="btn btn-danger">Yes, I am sure</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endblock content %}

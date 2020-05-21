@@ -6,3 +6,4 @@ users/__pycache__/
 users/migrations/__pycache__/
 .env
 media/
+Thumbs.db

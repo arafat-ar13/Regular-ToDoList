@@ -1,185 +1,176 @@
 {% extends "ToDo/base.html" %}
 {% block content %}
 {% load crispy_forms_tags %}
-{% load user_agents %}
+{% load static %}
 
 <style>
-    .full-content {
-        width: 100%;
-    }
-
-    .section-middle {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        margin-top: 1em;
-        /*set to a negative number 1/2 of your height*/
-        margin-left: -15em;
-        /*set to a negative number 1/2 of your width*/
-    }
-
-    .button-size {
-        size: 88px;
+    .big-list-item {
+        font-size: 4ch;
     }
 </style>
 
+{% if request.user.is_authenticated %}
 
-
-{% if user.is_authenticated %}
-<div class="content section full-content">
-    <form method="POST" name="add_form">
-        {% csrf_token %}
-        <fieldset class="form-group dark-mode-assist">
-            <legend class="border-bottom mb-4">New ToDo!</legend>
-            {{ add_form|crispy }}
-            <div class="form-group">
-                <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                    <label class="btn btn-outline-primary active">
-                        <input type="radio" name="options" value="unlisted" id="optionA" autocomplete="off" checked>
-                        Unlisted
-                    </label>
-                    {% for tasklist in tasklists %}
-                    <label class="btn btn-outline-primary">
-                        <input type="radio" name="options" id="option{{ tasklist.pk }}" value={{ tasklist.pk }}
-                            autocomplete="off">{{ tasklist.title }}
-                    </label>
-                    {% endfor %}
-                </div>
-                <button class="btn btn-outline-info" type="submit" name="add-task">Add</button>
-            </div>
-        </fieldset>
-    </form>
+<div style="text-align: center; font-family: Cambria">
+    <h1 style="font-size:10ch">Happy {{ today_name }}</h1>
+    <h1 style="font-size:8ch; color:indianred">
+        <i class="fas fa-smile-beam"></i>
+            {{ request.user.username }}
+        <i class="fas fa-smile-beam"></i>
+    </h1>
 </div>
 
-{% if user.profile.todos == 0 %}
-<div class="container-fluid">
-    <h2>You are on top of the world!</h2>
+<br><br><br><br><br>
+{% if insights_highlight %}
+    {% if request.user_agent.is_mobile %}
+        <center><a href="{% url 'insights' %}" style="background-color: powderblue; color:palevioletred; text-decoration: none; font-size:4ch">Your Insights for previous week is now ready!</a></center>
+    {% else %}
+        <center><a href="{% url 'insights' %}" style="background-color: powderblue; color:palevioletred; text-decoration: none; font-size:6.2ch">Your Insights for previous week is now ready!</a></center>
+    {% endif %}
+    <br><br><br>
+{% endif %}
+
+<center><h2 style="font-size:6ch; font-style: oblique;">Get to work</h2></center>
+<br>
+<div class="content-section">
+    <ul class="list-group">
+        <li class="hoverable-item list-group-item dark-mode-assist-section big-list-item colorful-list-items ">
+            <a style="color:inherit; text-decoration: none;" href="{% url 'todo-important' %}">
+                Important Tasks
+            </a>
+        </li>
+        <li class="hoverable-item list-group-item dark-mode-assist-section big-list-item colorful-list-items ">
+            <a style="color:inherit; text-decoration: none;" href="{% url 'todo-next-up' %}">
+                Next up for you
+            </a>
+        </li>
+        <li class="hoverable-item list-group-item dark-mode-assist-section big-list-item colorful-list-items ">
+            <a style="color:inherit; text-decoration: none;" href="{% url 'todo-files' %}">
+                Your files
+            </a>
+        </li>
+    </ul>
 </div>
-{% else %}
-{% for todo in todos %}
-{% if user.username|lower == todo.creator|lower and not todo.is_checked %}
-<article class="content-section">
-    <div class="media-body full-content">
 
-        {% if todo.has_notes %}
-        <h2>
-            <button onclick="location.href='{% url 'todo-toggle' todo.pk %}'" class="btn btn-outline-success"><i
-                    class="fa fa-check"></i></button> <a style="overflow: hidden; text-overflow: ellipsis;"
-                href="{% url 'todo-detailed' todo.title todo.pk %}" class="article-title"> {{ todo.title }}</a> <button
-                data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;"
-                class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
-            {% if todo.parent_list %}
-            <p style="color: chartreuse;"> ({{ todo.parent_list.title }}) </p>
-            {% endif %}
-        </h2>
-        {% else %}
-        <h2>
-            <button onclick="location.href='{% url 'todo-toggle' todo.pk %}'" class="btn btn-outline-success">
-                <i class="fa fa-check"></i>
-            </button>
-            <a href="{% url 'todo-detailed' todo.title todo.pk  %}" class="article-title"> {{ todo.title }}</a>
-            <button data-toggle="modal" data-target="#exampleModalCenter{{ todo.pk }}" style="float: right;"
-                class="btn btn-outline-danger">
-                <i class="fa fa-trash"></i>
-            </button>
-            {% if todo.parent_list %}
-            <p style="color: chartreuse;">
-                ({{ todo.parent_list.title }})
-            </p>
-            {% endif %}
-        </h2>
-        {% endif %}
 
-        {% if not todo.important %}
-        <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'" type="submit"
-            class="btn btn-secondary">
-            <span aria-hidden="true"><i class="fas fa-star"></i></span>
-        </button>
-        {% else %}
-        <button style="float: right;" onclick="location.href='{% url 'todo-toggle-important' todo.pk %}'" type="submit"
-            class="btn btn-warning">
-            <span aria-hidden="true"><i class="fas fa-star"></i></span>
-        </button>
-        {% endif %}
-
-        <!-- Modal -->
-        <div class="modal fade" id="exampleModalCenter{{ todo.pk }}" tabindex="-1" role="dialog"
-            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content dark-mode-assist-section">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLongTitle">Confirm the deletion</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        Are you sure you want to delete this task permanently?
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button onclick="location.href='{% url 'delete-item' 'todo' todo.pk %}'" type="submit"
-                            class="btn btn-danger">Yes, I am sure</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Modal ends -->
-
-        <!-- Due Date -->
-        {% if todo.due_date != None %}
-        <p2 style="font-weight: 1000; color: {{ todo.due_date_color }}; ">Due on: {{ todo.due_date|date:"F d" }}</p2>
-        {% endif %}
-
-        <br>
-        <div class="article-metadata">
-            <small class="text-muted">Created on: {{ todo.date_created|date:"F d, Y" }}</small>
-        </div>
-    </div>
-</article>
-{% endif %}
-{% endfor %}
-{% endif %}
-
-{% else %}
-<style>
-    #outer {
-        width: 100%;
-        text-align: center;
-    }
-
-    .inner {
-        display: inline-block;
-        margin: 5px;
-    }
-</style>
-{% if request.user_agent.is_mobile %}
-<h1
-    style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px;">
-    <center>Welcome to my app<br> <b style="background-color: cyan">Regular ToDoList</b></center>
-</h1>
-{% else %}
-
-<style>
-    #outer {
-        margin-left: 20ch;
-    }
-</style>
-
-<h1
-    style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px; padding-left: 10ch;">
-    <center>Welcome to my app<br> <b style="background-color: cyan">Regular ToDoList</b></center>
-</h1>
-{% endif %}
 <br><br><br>
-<div id="outer">
-    <div class="inner"><button style="height:65px; width:130px" type="button"
-            onclick="location.href='{% url 'register' %}'" class="btn btn-outline-success">Sign up</button></div>
-    <div class="inner"><button style="height:65px; width:130px" type="button"
-            onclick="location.href='{% url 'login' %}'" class="btn btn-outline-primary">Login</button></div>
-    <br>
-    <div class="inner"><button style="height:65px; width:270px" type="button"
-            onclick="location.href='{% url 'todo-about' %}'" class="btn btn-outline-dark">About the app</button></div>
+<center><h2 style="font-size:6ch; font-style: oblique;">Your Lists:</h2></center>
+<br>
+<br>
+<form method="POST">
+    {% csrf_token %}
+    <fieldset class="form-group dark-mode-assist">
+        <legend class="border-bottom mb-4">New List</legend>
+        {{ list_form|crispy }}
+    </fieldset>
+    <div class="form-group">
+        <button class="btn btn-outline-info" type="submit">Add</button>
+    </div>
+</form>
+<div class="content-section">
+    <ul class="list-group">
+        <li class="hoverable-item list-group-item dark-mode-assist-section big-list-item colorful-list-items">
+            <a style="color:inherit; text-decoration: none; font-size:3ch; color:tomato" href="{% url 'tasklist-single-view-default' 'tasks' %}">
+                Tasks
+            </a>
+        </li>
+        {% for user_list in user_lists %}
+            <li id="tasklist-item-{{ user_list.pk }}" class="hoverable-item list-group-item dark-mode-assist-section big-list-item colorful-list-items">
+                <a style="color:inherit; text-decoration: none;" href="{% url 'tasklist-single-view' user_list.title user_list.pk %}">{{ user_list }}</a>
+                <button data-toggle="modal" data-target="#exampleModalCenter{{ user_list.pk }}" style="float: right;" class="btn btn-outline-danger">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </li>
+
+            <div class="modal fade" id="exampleModalCenter{{ user_list.pk }}" tabindex="-1" role="dialog"
+            aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content dark-mode-assist-section">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLongTitle">Confirm the deletion</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to delete this list permanently? All its todos will be deleted as well.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button data-dismiss="modal" onclick="deleteItem('tasklist', {{ user_list.pk }})" type="submit"
+                                class="btn btn-danger">Yes, I am sure</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </ul>
 </div>
+
+<br><br><br>
+<center><h2 style="font-size:6ch; font-style: oblique;">More from us</h2></center>
+<div class="content-section">
+    <ul class="list-group">
+        <li class="hoverable-item list-group-item dark-mode-assist-section big-list-item colorful-list-items ">
+            <a style="color:inherit; text-decoration: none;" href="https://github.com/arafat-ar13/Regular-ToDoList" target="_blank">
+                GitHub
+                <i class="fab fa-github"></i>
+            </a>
+        </li>
+        <li class="hoverable-item list-group-item dark-mode-assist-section big-list-item colorful-list-items ">
+            <a style="color:inherit; text-decoration: none;" href="https://arafatkhan.me" target="_blank">
+                About me
+            </a>
+        </li>
+        <li class="hoverable-item list-group-item dark-mode-assist-section big-list-item colorful-list-items ">
+            <a style="color:inherit; text-decoration: none;" href="{% url 'contact-me' %}">
+                Contact Me
+                <i class="fas fa-envelope"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+{% else %}
+
+    <style>
+        #outer {
+            width: 100%;
+            text-align: center;
+        }
+
+        .inner {
+            display: inline-block;
+            margin: 5px;
+        }
+    </style>
+
+    {% if request.user_agent.is_mobile %}
+        <h1
+            style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px;">
+            <center>Welcome to my app<br> <b style="background-color: cyan">Regular ToDoList</b></center>
+        </h1>
+    {% else %}
+        <style>
+        </style>
+
+        <h1
+            style="font-weight: 300;font-family: Georgia, 'Times New Roman', Times, serif; font-style: italic; font-size: 56px; padding-left: 10ch;">
+            Welcome to my app<br> <b style="background-color: cyan">Regular ToDoList</b>
+        </h1>
+    {% endif %}
+
+    <br><br><br>
+    <div id="outer">
+        <div class="inner"><button style="height:65px; width:130px" type="button"
+                onclick="location.href='{% url 'register' %}'" class="btn btn-outline-success">Sign up</button></div>
+        <div class="inner"><button style="height:65px; width:130px" type="button"
+                onclick="location.href='{% url 'login' %}'" class="btn btn-outline-primary">Login</button></div>
+        <br>
+        <div class="inner"><button style="height:65px; width:270px" type="button"
+                onclick="location.href='{% url 'contact-me' %}'" class="btn btn-outline-dark">About the app</button></div>
+    </div>
+    
 {% endif %}
+
 {% endblock content %}

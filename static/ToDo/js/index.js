@@ -39,13 +39,14 @@ function changeTheme(theme) {
         stylesheet.setAttribute('href', dark_theme);
         toggler.className = "nav-item nav-link fas fa-sun"
         toggler.setAttribute("onClick", `changeTheme('light')`)
+        toggler.setAttribute("title", "Turn on Light Mode")
     }
     else {
         stylesheet.setAttribute('href', light_theme);
         toggler.className = "nav-item nav-link fas fa-moon"
         toggler.setAttribute("onClick", `changeTheme('dark')`)
+        toggler.setAttribute("title", "Turn on Dark Mode")
     }
-
 
 }
 
@@ -67,8 +68,8 @@ function toggleTodo(pk, opType, fromView) { // opType = Operation Type
                     document.getElementById(`todo-item-${pk}`).style.display = "none"
 
                     $("#todo-list-completed").prepend(
-                        `
-                    <li id="todo-item-${pk}-completed" class="list-group-item dark-mode-assist-section big-list-item">
+                    `
+                    <li id="todo-item-${pk}-completed" class="hoverable-item list-group-item dark-mode-assist-section big-list-item">
                         <button style="float:left" onclick="toggleTodo('${pk}', 'uncheck', 'single-view')"
                             class="btn btn-success"><i class="fa fa-check"></i> </button>
                         <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;"
@@ -82,13 +83,28 @@ function toggleTodo(pk, opType, fromView) { // opType = Operation Type
                 else if (opType == "uncheck") {
                     document.getElementById("todo-list").style.display = "block"
                     document.getElementById(`todo-item-${pk}-completed`).style.display = "none"
+                    console.log(json.show_due_date_icon)
+                    console.log(json.show_notes_icon)
+                    console.log(json.show_subtasks_icon)
+                    console.log(json.show_attachments_icon)
                     $("#todo-list").prepend(
-                        `
-                    <li id="todo-item-${pk}" class="list-group-item dark-mode-assist-section big-list-item">
+                    `
+                    <li id="todo-item-${pk}" class="hoverable-item list-group-item dark-mode-assist-section big-list-item">
                         <button style="float:left" onclick="toggleTodo(${pk}, 'check', 'single-view')"
-                            class="btn btn-outline-success"><i class="fa fa-check"></i> </button>
+                            class="btn btn-outline-success">
+                            <i class="fa fa-check"></i> 
+                        </button>
                         <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;"
-                            href="/todo/${json.todo_title}/${json.todo_pk}">${json.todo_title}</a>
+                            href="/todo/${json.todo_title}/${json.todo_pk}">${json.todo_title}
+                        </a>
+                        ${json.space_filler}
+                        <div style="display: inline-block;">
+                            <i style="display: ${json.show_due_date_icon}; font-size: 20px; color: ${json.due_date_color}" class="far fa-clock"></i>
+                            <small style="display: ${json.show_due_date_icon}" class="text-muted">${json.due_date}</small>
+                            <i style="display: ${json.show_subtasks_icon}; font-size: 20px; color: aqua;" class="fas fa-tasks"></i> 
+                            <i style="display: ${json.show_notes_icon}; font-size: 20px; color: coral;" class="far fa-sticky-note"></i>
+                            <i style="display: ${json.show_attachments_icon}; font-size: 20px; color: pink;" class="fas fa-paperclip"></i>
+                        </div>
                         <button data-toggle="modal" data-target="#exampleModalCenter${pk}" style="float: right;"
                             class="btn btn-outline-danger"><i class="fas fa-trash"></i></button>
                         <button id="todo-important-${pk}" onclick="toggleImportant(${pk}, '${json.important_op}')"
@@ -228,6 +244,7 @@ function deleteItem(item_type, pk) {
         // handle a successful response
         success: function (json) {
             console.log("success"); // another sanity check
+            console.log(json.show_tasks)
             if (json.hide_heading == "yes") {
                 document.getElementById("subtask-heading").style.display = "none"
                 document.getElementById("progress").style.display = "none"
@@ -236,6 +253,10 @@ function deleteItem(item_type, pk) {
 
             if (json.hide_attachments == true) {
                 document.getElementById("attachments-section").style.display = "none"
+            }
+
+            if (json.show_tasks == false) {
+                document.getElementById("todo-list").style.display = "none"
             }
         },
     });
@@ -289,7 +310,7 @@ function createTask() {
             document.getElementById("todo-list").style.display = "block"
             $('#todo-list').prepend(
                 `
-                <li id="todo-item-${json.todo_pk}" class="list-group-item dark-mode-assist-section big-list-item">
+                <li id="todo-item-${json.todo_pk}" class="hoverable-item list-group-item dark-mode-assist-section big-list-item">
                 <button style="float:left" onclick="toggleTodo('${json.todo_pk}', 'check', 'single-view')"
                 class="btn btn-outline-success">
                     <i class="fa fa-check"></i>
@@ -332,7 +353,7 @@ function createSubtask() {
             document.getElementById("subtask-heading").innerHTML = "Subtasks for this task"
             $('#subtask-list').append(
                 `
-                <li class="content-section" id="subtask-items-${json.subtask_pk}" style="font-size: 23px;">
+                <li class="hoverable-item content-section" id="subtask-items-${json.subtask_pk}" style="font-size: 23px;">
                     <button id="subtask-btn-${json.subtask_pk}" onclick="toggleSubtask('${json.subtask_pk}', 'check')"
                         class="btn btn-outline-success">
                         <i class="fa fa-check"></i>
