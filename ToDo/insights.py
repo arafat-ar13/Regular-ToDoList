@@ -241,6 +241,7 @@ def render_insights(request):
 
     else:
         ready = "AI is still learning"
+        week_range = None
 
     img_exists = False
     if os.path.isfile(f"media/users/{user}_{user.pk}/insights_graphs/graph_this_week.png"):

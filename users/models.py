@@ -8,7 +8,7 @@ def get_user_dp_dir(instance, filename):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    image = models.ImageField(default="default.jpg", upload_to=get_user_dp_dir)
+    image = models.ImageField(default="default_img.jpg", upload_to=get_user_dp_dir)
     theme = models.CharField(default="light", max_length=20)
     # The attributes below are used by the Insights Page to analyze the user
     insights_enabled = models.BooleanField(default=False)
@@ -25,6 +25,8 @@ class Profile(models.Model):
     important_tasks_completed_this_week = models.IntegerField(default=0)
     missed_tasks_this_week = models.IntegerField(default=0)
     todos_completed_after_due_date = models.IntegerField(default=0)
+    # This attribute tracks if user got to know of the 2.0 version
+    ver_2_informed = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} Profile"

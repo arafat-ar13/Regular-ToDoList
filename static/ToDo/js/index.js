@@ -6,7 +6,11 @@ function toggleImportant(pk, type) {
 
         // handle a successful response
         success: function (json) {
-            console.log("success"); // another sanity check
+            console.log("success"); // sanity check
+        },
+
+        error : function(err) {
+            console.log(err.status + ": " + err.responseText); // provide a bit more info about the error to the console
         },
     });
 
@@ -60,6 +64,7 @@ function toggleTodo(pk, opType, fromView) { // opType = Operation Type
         // handle a successful response
         success: function (json) {
             console.log("successful operation"); // another sanity check
+            console.log(json.show_tasks)
             console.log(json.show_hidden_completed_tasks)
 
             if (fromView == "single-view") {
@@ -83,10 +88,6 @@ function toggleTodo(pk, opType, fromView) { // opType = Operation Type
                 else if (opType == "uncheck") {
                     document.getElementById("todo-list").style.display = "block"
                     document.getElementById(`todo-item-${pk}-completed`).style.display = "none"
-                    console.log(json.show_due_date_icon)
-                    console.log(json.show_notes_icon)
-                    console.log(json.show_subtasks_icon)
-                    console.log(json.show_attachments_icon)
                     $("#todo-list").prepend(
                     `
                     <li id="todo-item-${pk}" class="hoverable-item list-group-item dark-mode-assist-section big-list-item">
@@ -187,6 +188,10 @@ function toggleTodo(pk, opType, fromView) { // opType = Operation Type
                 document.getElementById(`todo-item-${pk}`).style.display = "none"
             }
         },
+
+        error : function(err) {
+            console.log(err.status + ": " + err.responseText); // provide a bit more info about the error to the console
+        },
     });
 }
 
@@ -215,6 +220,10 @@ function toggleSubtask(pk, opType) { // opType = Operation Type
             }
 
         },
+
+        error : function(err) {
+            console.log(err.status + ": " + err.responseText); // provide a bit more info about the error to the console
+        },
     });
 
     let subtaskBtn = document.getElementById(`subtask-btn-${pk}`)
@@ -240,11 +249,11 @@ function deleteItem(item_type, pk) {
             pk: pk,
             item_type: item_type
         }, // data sent with the get request
+        dataType: 'json',
 
         // handle a successful response
         success: function (json) {
-            console.log("success"); // another sanity check
-            console.log(json.show_tasks)
+            console.log("success"); // sanity check
             if (json.hide_heading == "yes") {
                 document.getElementById("subtask-heading").style.display = "none"
                 document.getElementById("progress").style.display = "none"
@@ -258,34 +267,38 @@ function deleteItem(item_type, pk) {
             if (json.show_tasks == false) {
                 document.getElementById("todo-list").style.display = "none"
             }
+
+            if (item_type == "subtask") {
+                let subtaskList = document.getElementById(`subtask-items-${pk}`)
+                subtaskList.style.display = "none"
+            }
+        
+            else if (item_type == "notes") {
+                document.getElementById("notes").style.display = "none"
+                document.getElementById("notes-input").style.display = "block"
+            }
+        
+            else if (item_type == "due_date") {
+                document.getElementById(`due-date-input-${pk}`).style.display = "block"
+                document.getElementById(`due-date-content-${pk}`).style.display = "none"
+            }
+        
+            else if (item_type == "attachment") {
+                document.getElementById(`attachment-${pk}`).style.display = "none"
+            }
         },
+
+        error : function(err) {
+            console.log(err.status + ": " + err.responseText); // provide a bit more info about the error to the console
+        }
     });
 
-    if (item_type == "subtask") {
-        let subtaskList = document.getElementById(`subtask-items-${pk}`)
-        subtaskList.style.display = "none"
-    }
-
-    else if (item_type == "notes") {
-        document.getElementById("notes").style.display = "none"
-        document.getElementById("notes-input").style.display = "block"
-    }
-
-    else if (item_type == "todo") {
+    if (item_type == "todo") {
         document.getElementById(`todo-item-${pk}`).style.display = "none"
     }
 
     else if (item_type == "tasklist") {
         document.getElementById(`tasklist-item-${pk}`).style.display = "none"
-    }
-
-    else if (item_type == "due_date") {
-        document.getElementById("due-date-input").style.display = "block"
-        document.getElementById("due-date-content").style.display = "none"
-    }
-
-    else if (item_type == "attachment") {
-        document.getElementById(`attachment-${pk}`).style.display = "none"
     }
 }
 
@@ -388,7 +401,7 @@ function createNote() {
             document.getElementById("notes-input").style.display = "none"
             document.getElementById("notes").style.display = "block"
             document.getElementById("notes-content").innerHTML =
-                `
+            `
             <br>
             <div style="font-family:Candara">${json.note_content}</div>
             <br>
@@ -400,7 +413,7 @@ function createNote() {
             </button>
             `
             document.getElementById("notes-metadata").innerHTML =
-                `
+            `
             <br>
             Notes added on: <b>${json.note_created}</b>
             `
@@ -422,17 +435,18 @@ function createDueDate() {
         success: function (json) {
             console.log("due date added: " + $("#input-due-date").val().toString()); // another sanity check
             $("#input-notes").val('') // remove the value from the input
-            document.getElementById("due-date-content").style.display = "block"
-            document.getElementById("due-date-content").style.color = json.due_date_color
-            document.getElementById("due-date-content").innerHTML =
-                `
+            let parent_task_pk = document.getElementById("hidden-parent-task-pk").innerHTML
+            document.getElementById(`due-date-content-${parent_task_pk}`).style.display = "block"
+            document.getElementById(`due-date-content-${parent_task_pk}`).style.color = json.due_date_color
+            document.getElementById(`due-date-content-${parent_task_pk}`).innerHTML =
+            `
             Due on: ${json.due_date}
             <button onclick="deleteItem('due_date', ${json.parent_task_pk})" class="btn btn-outline-danger">
                 <i class="fa fa-trash">
                 </i>
             </button>
             `
-            document.getElementById("due-date-input").style.display = "none"
+            document.getElementById(`due-date-input-${parent_task_pk}`).style.display = "none"
         },
     });
 }

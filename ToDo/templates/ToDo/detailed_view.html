@@ -60,7 +60,7 @@
     <br>
 
     {% if todo.due_date != None %}
-        <p id="due-date-content" style="font-size: 25px; color: {{ todo.due_date_color }}">
+        <p id="due-date-content-{{ todo.pk }}" style="font-size: 25px; color: {{ todo.due_date_color }}">
             Due on: {{ todo.due_date|date:"F d" }} 
             <button onclick="deleteItem('due_date', {{ todo.pk }})" class="btn btn-outline-danger">
                 <i class="fa fa-trash">
@@ -68,7 +68,7 @@
             </button>
         </p>
     {% else %}
-        <div id="due-date-input">
+        <div id="due-date-input-{{ todo.pk }}">
             <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample{{ todo.pk }}" role="button"
                 aria-expanded="false" aria-controls="multiCollapseExample{{ todo.pk }}">
                 Due Date 
@@ -101,10 +101,10 @@
         <br>
     {% endif %}
 
-    <p id="due-date-content" style="display: none; font-size: 25px; color: {{ todo.due_date_color }};">
+    <p id="due-date-content-{{ todo.pk }}" style="display: none; font-size: 25px; color: {{ todo.due_date_color }};">
     </p>
 
-    <div style="display: none;" id="due-date-input">
+    <div style="display: none;" id="due-date-input-{{ todo.pk }}">
         <a class="btn btn-outline-primary" data-toggle="collapse" href="#multiCollapseExample{{ todo.pk }}-hidden" role="button"
             aria-expanded="false" aria-controls="multiCollapseExample{{ todo.pk }}-hidden">
             Due Date 
@@ -251,7 +251,7 @@
                     <legend class="border-bottom mb-4">Add notes</legend>
                     {{ note_form|crispy }}
                     <input type="hidden" name="title" value={{ note.pk }}>
-                    <p id="hidden-parent-task-pk" style="display:none">{{ todo.pk }}</p>
+                    <p id="hidden-parent-task-pk" style="display:none">{{ todo.pk }}</p> 
                 </fieldset>
                 <div class="form-group">
                     <button class="btn btn-outline-info" type="submit">Add</button>
@@ -269,6 +269,7 @@
                 {{ note_form|crispy }}
                 <input type="hidden" name="title" value={{ note.pk }}>
                 <p id="hidden-parent-task-pk" style="display:none">{{ todo.pk }}</p>
+                <p id="hidden-note-pk" style="display: none">{{ note.pk }}</p>
             </fieldset>
             <div class="form-group">
                 <button class="btn btn-outline-info" type="submit">Add</button>

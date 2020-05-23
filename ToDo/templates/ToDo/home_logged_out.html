@@ -1,0 +1,102 @@
+{% extends "ToDo/base.html" %}
+{% block content %}
+{% load static %}
+
+<style>
+    #outer {
+        width: 100%;
+        text-align: center;
+    }
+
+    .inner {
+        display: inline-block;
+        margin: 5px;
+    }
+
+    .big-text {
+        font-size: 7ch;
+    }
+</style>
+
+<center style="background-color: lightsteelblue;">
+
+{% if request.user_agent.is_mobile %}
+    <img src="{% static 'favicon-1024.png' %}" style="width: 40%;">
+{% else %}
+    <img src="{% static 'favicon-1024.png' %}" style="width: 10%;">
+{% endif %}
+
+<div class="container">
+    <h1 style="font-weight: 300; font-size: 7ch">
+        Regular ToDoList
+    </h1>
+
+    <h2>A Not-So-Simple Productivity app that helps you to keep on top of your tasks</h2>
+</div>
+
+<br><br><br>
+
+<a id="getStartedBtn" class="btn btn-outline-info btn-lg" data-toggle="collapse" href="#multiCollapseExample1" role="button"
+    aria-expanded="false" aria-controls="multiCollapseExample1">
+    Get Started
+</a>
+<div class="row">
+    <div class="col">
+        <div class="collapse multi-collapse" id="multiCollapseExample1">
+            <br>
+            <div id="outer">
+                <div class="inner"><button style="height:65px; width:130px" type="button"
+                    onclick="location.href='{% url 'register' %}'" class="btn btn-outline-success">Sign up</button></div>
+                <div class="inner"><button style="height:65px; width:130px" type="button"
+                    onclick="location.href='{% url 'login' %}'" class="btn btn-outline-primary">Login</button></div>
+                <br>
+            </div>
+        </div>
+    </div>
+</div>
+<br><br><br>
+
+</center>
+
+<br><br><br>
+    <h1 class="big-text">Features</h1>
+    <div class="hoverable-item card card-body">
+        <h2 style="float: left; font-size: 4ch;">
+            TaskLists
+            <i style="float: right; color:aquamarine" class="big-text fas fa-clipboard-list"></i>
+        </h2>
+    </div>
+    <div class="hoverable-item card card-body">
+        <h2 style="text-align: right; font-size: 4ch;">
+            ToDos
+            <i style="float: left; color:mediumorchid" class="big-text fas fa-check-square"></i>
+        </h2>
+    </div>
+    <div class="hoverable-item card card-body">
+        <h2 style="float: left; font-size: 4ch;">
+            SubTasks
+            <i style="float: right; color:orange" class="big-text fas fa-tasks"></i>
+        </h2>
+    </div>
+    <div class="hoverable-item card card-body">
+        <h2 style="text-align: right; font-size: 4ch;">
+            Attachments
+            <i style="float: left; color:sienna" class="big-text fas fa-paperclip"></i>
+        </h2>
+    </div>
+    <div class="hoverable-item card card-body">
+        <h2 style="float: left; font-size: 4ch;">
+            Notes
+            <i style="float: right; color:lime" class="big-text far fa-sticky-note"></i>
+        </h2>
+    </div>
+</div>
+
+<br><br><br>
+<center>
+    <h2>We can't wait to see how you'll take control of your productivity life!!</h2>
+    <a href="#top" class="btn btn-outline-info btn-lg">Get Started!?</a>
+</center>
+
+
+{% endblock content %}

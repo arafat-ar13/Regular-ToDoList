@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import redirect, render
+from django.conf import settings
 
 from .forms import ProfileUpdateForm, UserRegisterForm, UserUpdateForm
 
@@ -21,8 +22,8 @@ def register(request):
             messages.success(
                 request, f"Your account has been created. You can now login.")
 
-            # Creating a respective directory that will contain their weekly bar graphs
-            os.mkdir(f"../media/users/{username}_{form.instance.pk}")
+            # Creating a respective directory that belongs to this user
+            os.mkdir(f"{settings.MEDIA_ROOT}/users/{username}_{form.instance.pk}")
 
             return redirect("login")
     else:

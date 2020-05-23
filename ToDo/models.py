@@ -33,6 +33,13 @@ class ToDo(models.Model):
     def __str__(self):
         return self.title
 
+    def delete(self, *args, **kwargs):
+        if self.parent_list is not None:
+            self.parent_list.num_of_tasks -= 1
+            self.parent_list.save()
+
+        super().delete(*args, **kwargs)
+
 
 class SubTask(models.Model):
     title = models.CharField(max_length=100)
@@ -41,6 +48,12 @@ class SubTask(models.Model):
 
     def __str__(self):
         return self.title
+
+    def delete(self, *args, **kwargs):
+        self.parent_task.num_of_subtasks -= 1
+        self.parent_task.save()
+
+        super().delete(*args, **kwargs)
 
 
 class Notes(models.Model):
@@ -53,15 +66,29 @@ class Notes(models.Model):
     def __str__(self):
         return f"Notes of {self.parent_task.title}"
 
+    def delete(self, *args, **kwargs):
+        self.parent_task.has_notes = False
+        self.parent_task.save()
+
+        print(f"Notes of {self.parent_task.title} was deleted")
+
+        super().delete(*args, **kwargs)
+
 
 def get_attachment_dir(instance, filename):
     return f"users/{instance.parent_task.creator.username}_{instance.parent_task.creator.pk}/task_attachments/{instance.parent_task.pk}/{filename}"
 
 
 class Attachments(models.Model):
-    content = models.FileField(upload_to=get_attachment_dir, help_text="Add important documents or pictures")
+    content = models.FileField(null=True, blank=True, upload_to=get_attachment_dir, help_text="Add important documents or pictures")
     parent_task = models.ForeignKey(ToDo, on_delete=models.CASCADE)
     uploaded_on = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Attachments of {self.parent_task.title}"
+
+    def delete(self, *args, **kwargs):
+        self.parent_task.has_attachments = False
+        self.parent_task.save()
+
+        super().delete(*args, **kwargs)

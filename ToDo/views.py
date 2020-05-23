@@ -8,6 +8,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
+from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse
 from django.shortcuts import (HttpResponse, HttpResponseRedirect, redirect,
                               render)
 from django.urls import reverse, reverse_lazy
@@ -20,19 +22,21 @@ from .templatetags.filename import getfilename
 
 
 # Handling error views
-
 def handler404(request, *args):
     return render(request, 'ToDo/Error Pages/500.html', status=404)
 
 def handler500(request, *args):
     return render(request, 'ToDo/Error Pages/500.html', status=500)
 
-def view_err(request):
-    return render(request, 'ToDo/Error Pages/500.html')
-
 
 def new_ver2(request):
     " A simple view function to render what new changes we have made in the 2.0 of the app "
+
+    # Disabling user's modal so that the person does not see the modal next time
+    if not request.user.profile.ver_2_informed:
+        request.user.profile.ver_2_informed = True
+        request.user.save()
+
     return render(request, "ToDo/new_in_2.0.html")
 
 
@@ -61,11 +65,18 @@ def home(request):
         else:
             list_form = NewTaskListForm()
 
-        # Passing 'yes' if there should be an Insights highlight
+        # Passing True if there should be an Insights highlight
         insights_highlight = False
         today = datetime.datetime.today().date()
-        if (today - request.user.profile.last_insights_date).days >= 7:
-            insights_highlight = True
+        try:
+            # Checking if user is a newly joined one
+            if (today - request.user.profile.last_insights_date).days >= 7:
+                insights_highlight = True
+        except:
+            # If an error, that means that the user is a new one
+            # So we compare today with the day they joined
+            if (today - request.user.date_joined.date()).days >= 7:
+                insights_highlight = True
 
         context = {
             "user_lists": user_lists,
@@ -73,11 +84,11 @@ def home(request):
             "insights_highlight": insights_highlight,
             "today_name": calendar.day_name[datetime.datetime.today().weekday()]
         }
-    
-    else:
-        context = {}
 
-    return render(request, "ToDo/home.html", context=context)
+        return render(request, "ToDo/home.html", context=context)
+
+    else:
+        return render(request, "ToDo/home_logged_out.html")
 
 @login_required
 def search(request):
@@ -418,6 +429,7 @@ def delete(request):
     """
     Universal view function to delete any object from the database.
     It has AJAX support for asynchronous deletion and removal of items
+    The function also incorporates security checks to restrict unauthorized deletion of any object
     """
     response_data = {}
     if request.method == "POST":
@@ -425,7 +437,13 @@ def delete(request):
         pk = int(request.POST.get("pk"))
 
         if item_type == "todo":
-            todo = ToDo.objects.get(pk=pk)
+            try:
+                todo = ToDo.objects.get(pk=pk, creator=request.user)
+            except:
+                # Security check
+                response = HttpResponse(json.dumps({"error": "Your access is denied"}))
+                response.status_code = 403 # To announce that the user isn't allowed to proceed
+                return response
 
             # removing this todos attachments from server
             for attachment in Attachments.objects.filter(parent_task=todo):
@@ -437,52 +455,82 @@ def delete(request):
                 response_data["show_tasks"] = False
 
         elif item_type == "subtask":
-            subtask = SubTask.objects.get(pk=pk)
+            # Extreme security check
+            try:
+                subtask = SubTask.objects.get(pk=pk)
+                if subtask.parent_task.creator != request.user:
+                    raise PermissionDenied
+            except PermissionDenied:
+                response = HttpResponse(json.dumps({"error": "Your access is denied"}))
+                response.status_code = 403 # To announce that the user isn't allowed to proceed
+                return response
+            except:
+                response = HttpResponse(json.dumps({"error": "There was a server error"}))
+                response.status_code = 500 # A server error e.g subtask with this pk does not exist
+                return response
 
-            subtask.parent_task.num_of_subtasks -= 1
-            subtask.parent_task.save()
+            subtask.delete()
 
             response_data["hide_heading"] = "no"
             if subtask.parent_task.num_of_subtasks == 0:
                 response_data["hide_heading"] = "yes"
 
-            subtask.delete()
-
         elif item_type == "notes":
-            notes = Notes.objects.get(pk=pk)
+            try:
+                notes = Notes.objects.get(pk=pk)
+                if notes.parent_task.creator != request.user:
+                    raise PermissionDenied
+            except PermissionDenied:
+                response = HttpResponse(json.dumps({"error": "Your access is denied"}))
+                response.status_code = 403 # To announce that the user isn't allowed to proceed
+                return response
+            except:
+                response = HttpResponse(json.dumps({"error": "There was a server error"}))
+                response.status_code = 500 # A server error e.g note with this pk doesn't exist
+                return response
 
-            notes.parent_task.has_notes = False
-            notes.parent_task.save()
             notes.delete()
 
         elif item_type == "tasklist":
-            tasklist = TaskList.objects.get(pk=pk)
-
-            # Delete child todos from the database
-            for todo in ToDo.objects.filter(parent_list=tasklist):
-                # Also deleting any attachments those todos might have
-                for attachment in Attachments.objects.filter(parent_task=todo):
-                    attachment.delete()
-
-                todo.delete()
+            try:
+                tasklist = TaskList.objects.get(pk=pk)
+                if tasklist.owner != request.user:
+                    raise PermissionDenied
+            except PermissionDenied:
+                response = HttpResponse(json.dumps({"error": "Your access is denied"}))
+                response.status_code = 403 # To announce that the user isn't allowed to proceed
+                return response
+            except:
+                response = HttpResponse(json.dumps({"error": "There was a server error"}))
+                response.status_code = 500 # Server error e.g TaskList with pk doesn't exist
+                return response
 
             tasklist.delete()
 
         elif item_type == "due_date":
-            parent_task = ToDo.objects.get(pk=pk)
+            try:
+                parent_task = ToDo.objects.get(pk=pk)
+            except:
+                response = HttpResponse(json.dumps({"error": "Your access is denied"}))
+                response.status_code = 403 # To announce that the user isn't allowed to proceed
+                return response
+
             parent_task.due_date = None
             parent_task.due_date_color = None
             parent_task.save()
 
         elif item_type == "attachment":
-            attachment = Attachments.objects.get(pk=pk)
+            try:
+                attachment = Attachments.objects.get(pk=pk)
+            except:
+                response = HttpResponse(json.dumps({"error": "Your access is denied"}))
+                response.status_code = 403 # To announce that the user isn't allowed to proceed
+                return response
+
             attachment.delete()
 
             if Attachments.objects.filter(parent_task=attachment.parent_task).count() == 0:
                 response_data["hide_attachments"] = True
-
-                attachment.parent_task.has_attachments = False
-                attachment.parent_task.save()
 
         return HttpResponse(
             json.dumps(response_data),
@@ -502,7 +550,12 @@ def toggle_important_task(request):
     if request.method == "POST":
         pk = int(request.POST.get("pk"))
 
-        todo = ToDo.objects.get(pk=pk)
+        try:
+            todo = ToDo.objects.get(pk=pk, creator=request.user)
+        except:
+            response = HttpResponse(json.dumps({"error": "Your access is denied"}))
+            response.status_code = 403 # To announce that the user isn't allowed to proceed
+            return response
 
         if todo.important:
             todo.important = False
@@ -531,7 +584,6 @@ def toggle_theme(request):
 
     if request.method == "POST":
         theme = request.POST.get("theme")
-        print(theme)
 
         user.profile.theme = theme
         user.save()
@@ -555,10 +607,14 @@ def toggle_todo(request):
 
     if request.method == "POST":
         pk = int(request.POST.get("pk"))
-        todo = ToDo.objects.get(pk=pk)
 
-        completed_tasks_before = ToDo.objects.filter(
-            parent_list=todo.parent_list, is_checked=True).count()
+        # Security check
+        try:
+            todo = ToDo.objects.get(pk=pk, creator=request.user)
+        except:
+            response = HttpResponse(json.dumps({"error": "Your access is denied"}))
+            response.status_code = 403 # To announce that the user isn't allowed to proceed
+            return response
 
         if todo.is_checked:
             todo.is_checked = False
@@ -587,17 +643,16 @@ def toggle_todo(request):
             response_data["important_class"] = "btn btn-secondary"
 
         # Checking if we should display "Completed Tasks"
-        if (ToDo.objects.filter(parent_list=todo.parent_list, is_checked=True).count() - completed_tasks_before == 1) and completed_tasks_before != 1:
-            show_hidden_completed_tasks = True
-        elif ToDo.objects.filter(parent_list=todo.parent_list, is_checked=True).count() == 0:
-            show_hidden_completed_tasks = False
+        if ToDo.objects.filter(parent_list=todo.parent_list, is_checked=True, creator=request.user).count() == 0:
+            show_completed = False
         else:
-            show_hidden_completed_tasks = None
+            show_completed = True
 
-        response_data["show_hidden_completed_tasks"] = show_hidden_completed_tasks
+        response_data["show_hidden_completed_tasks"] = show_completed
 
+        # Checking if we should display "Tasks"
         show_tasks = True
-        if ToDo.objects.filter(parent_list=todo.parent_list, is_checked=False).count() == 0:
+        if ToDo.objects.filter(parent_list=todo.parent_list, is_checked=False, creator=request.user).count() == 0:
             show_tasks = False
 
         response_data["show_tasks"] = show_tasks
@@ -645,7 +700,16 @@ def toggle_todo(request):
 def toggle_subtask(request):
 
     if request.method == "POST":
-        subtask = SubTask.objects.get(pk=int(request.POST.get("pk")))
+        # Security check
+        try:
+            subtask = SubTask.objects.get(pk=int(request.POST.get("pk")))
+            if subtask.parent_task.creator != request.user:
+                raise PermissionDenied
+        except:
+            response = HttpResponse(json.dumps({"error": "Your access is denied"}))
+            response.status_code = 403 # To announce that the user isn't allowed to proceed
+            return response
+            
 
         if subtask.done:
             subtask.done = False
