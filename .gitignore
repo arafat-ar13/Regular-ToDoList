@@ -7,3 +7,4 @@ users/migrations/__pycache__/
 .env
 media/
 Thumbs.db
+db.sqlite3
