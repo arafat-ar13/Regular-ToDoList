@@ -2,6 +2,7 @@
 {% block content %}
 {% load static %}
 {% load filename %}
+{% load tz %}
 
 <center class="dark-mode-assist" style="font-size: 5ch">Your important files are here</center>
 <br><br>
@@ -23,7 +24,7 @@
                 <tr class="hoverable-item dark-mode-assist-section" id="attachment-{{ attachment.pk }}">
                     <td>{{ attachment.content|getfilename }}</td>
                     <td><a href="{% url 'todo-detailed' attachment.parent_task attachment.parent_task.pk %}">{{ attachment.parent_task }}</a></td>
-                    <td>{{ attachment.uploaded_on|date:"F d"}}</td>
+                    <td>{{ attachment.uploaded_on|timezone:request.user.profile.timezone|date:"F d"}}</td>
                     <td><a class="btn btn-outline-success" href="{{ attachment.content.url }}">Click me <i class="fas fa-download"></i></a></td>
                     <td>
                         <button style="font-size: 2.5ch;" data-toggle="modal" data-target="#exampleModalCenter{{ attachment.pk }}" class="btn btn-outline-danger">

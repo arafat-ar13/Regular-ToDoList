@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import models
 from PIL import Image
+from timezone_field import TimeZoneField
+
 
 def get_user_dp_dir(instance, filename):
     return f"users/{instance.user.username}_{instance.user.pk}/profile_pics/{filename}"
@@ -8,7 +10,8 @@ def get_user_dp_dir(instance, filename):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    image = models.ImageField(default="default_img.jpg", upload_to=get_user_dp_dir)
+    image = models.ImageField(
+        default="default_img.jpg", upload_to=get_user_dp_dir)
     theme = models.CharField(default="light", max_length=20)
     # The attributes below are used by the Insights Page to analyze the user
     insights_enabled = models.BooleanField(default=False)
@@ -27,6 +30,7 @@ class Profile(models.Model):
     todos_completed_after_due_date = models.IntegerField(default=0)
     # This attribute tracks if user got to know of the 2.0 version
     ver_2_informed = models.BooleanField(default=False)
+    timezone = TimeZoneField(default="UTC")
 
     def __str__(self):
         return f"{self.user.username} Profile"

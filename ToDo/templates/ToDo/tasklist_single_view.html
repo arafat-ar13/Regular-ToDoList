@@ -1,6 +1,7 @@
 {% extends "ToDo/base.html" %}
 {% block content %}
 {% load crispy_forms_tags %}
+{% load tz %}
 
 <style>
     {% if request.user_agent.is_mobile %}
@@ -66,7 +67,7 @@
                 {% endif %}
                 {% if todo.due_date %}
                     <i title="Task has due date" style="font-size: 20px; color: {{ todo.due_date_color }}" class="far fa-clock"></i>
-                    <small class="text-muted">{{ todo.due_date|date:"F d" }}</small>
+                    <small class="text-muted">{{ todo.due_date|timezone:request.user.profile.timezone|date:"F d" }}</small>
                 {% endif %}
 
 
@@ -135,7 +136,7 @@
                                         href="{% url 'todo-detailed' todo.title todo.pk %}"> 
                                         <s>{{ todo.title }}</s>
                                     </a>
-                                    <br><b style="color:chocolate">On: {{ todo.date_completed|date:"F d" }}</b>
+                                    <br><b style="color:chocolate">Completed on: {{ todo.date_completed|timezone:request.user.profile.timezone|date:"F d" }}</b>
                                 </li>
                             {% endfor %}
                         </ul>

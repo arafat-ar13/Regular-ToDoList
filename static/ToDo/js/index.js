@@ -64,8 +64,6 @@ function toggleTodo(pk, opType, fromView) { // opType = Operation Type
         // handle a successful response
         success: function (json) {
             console.log("successful operation"); // another sanity check
-            console.log(json.show_tasks)
-            console.log(json.show_hidden_completed_tasks)
 
             if (fromView == "single-view") {
 
@@ -79,7 +77,7 @@ function toggleTodo(pk, opType, fromView) { // opType = Operation Type
                             class="btn btn-success"><i class="fa fa-check"></i> </button>
                         <a style="margin-left: 7px; color:inherit; text-decoration: none; font-size: 2.5ch;"
                             href="/todo/${json.todo_title}/${json.todo_pk}"> <s>${json.todo_title}</s></a>
-                        <br><b style="color:chocolate">On:${json.todo_date_completed}</b>
+                        <br><b style="color:chocolate">Completed on: ${json.todo_date_completed}</b>
                     </li>
                     `
                     )
@@ -267,24 +265,10 @@ function deleteItem(item_type, pk) {
             if (json.show_tasks == false) {
                 document.getElementById("todo-list").style.display = "none"
             }
-
-            if (item_type == "subtask") {
-                let subtaskList = document.getElementById(`subtask-items-${pk}`)
-                subtaskList.style.display = "none"
-            }
         
             else if (item_type == "notes") {
                 document.getElementById("notes").style.display = "none"
                 document.getElementById("notes-input").style.display = "block"
-            }
-        
-            else if (item_type == "due_date") {
-                document.getElementById(`due-date-input-${pk}`).style.display = "block"
-                document.getElementById(`due-date-content-${pk}`).style.display = "none"
-            }
-        
-            else if (item_type == "attachment") {
-                document.getElementById(`attachment-${pk}`).style.display = "none"
             }
         },
 
@@ -299,6 +283,20 @@ function deleteItem(item_type, pk) {
 
     else if (item_type == "tasklist") {
         document.getElementById(`tasklist-item-${pk}`).style.display = "none"
+    }
+
+    else if (item_type == "subtask") {
+        let subtaskList = document.getElementById(`subtask-items-${pk}`)
+        subtaskList.style.display = "none"
+    }
+
+    else if (item_type == "due_date") {
+        document.getElementById(`due-date-input-${pk}`).style.display = "block"
+        document.getElementById(`due-date-content-${pk}`).style.display = "none"
+    }
+    
+    else if (item_type == "attachment") {
+        document.getElementById(`attachment-${pk}`).style.display = "none"
     }
 }
 

@@ -1,29 +1,28 @@
 import calendar
-import datetime
 import json
-import os
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
 from django.core.exceptions import PermissionDenied
-from django.http import JsonResponse
+from django.core.mail import send_mail
 from django.shortcuts import (HttpResponse, HttpResponseRedirect, redirect,
                               render)
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.generic import CreateView, ListView, UpdateView
 
 from .forms import (ContactMeForm, DueDateForm, NewTaskForm, NewTaskListForm,
-                    SearchForm, SubTaskForm, ToDoNotesForm, TaskAttachmentForm)
-from .models import Notes, SubTask, TaskList, ToDo, Attachments
+                    SearchForm, SubTaskForm, TaskAttachmentForm, ToDoNotesForm)
+from .models import Attachments, Notes, SubTask, TaskList, ToDo
 from .templatetags.filename import getfilename
 
 
 # Handling error views
 def handler404(request, *args):
     return render(request, 'ToDo/Error Pages/500.html', status=404)
+
 
 def handler500(request, *args):
     return render(request, 'ToDo/Error Pages/500.html', status=500)
@@ -33,11 +32,27 @@ def new_ver2(request):
     " A simple view function to render what new changes we have made in the 2.0 of the app "
 
     # Disabling user's modal so that the person does not see the modal next time
-    if not request.user.profile.ver_2_informed:
-        request.user.profile.ver_2_informed = True
-        request.user.save()
+    if request.user.is_authenticated:
+        if not request.user.profile.ver_2_informed:
+            request.user.profile.ver_2_informed = True
+            request.user.save()
 
     return render(request, "ToDo/new_in_2.0.html")
+
+
+def check_time(request):
+    "A view function that let's users view their local time and server time (usually UTC) at a glance"
+    user = User.objects.get(username=request.user.username)
+
+    server_time = timezone.now()
+    user_localtime = server_time.astimezone(user.profile.timezone)
+
+    context = {
+        "server_time": server_time,
+        "user_localtime": user_localtime
+    }
+
+    return render(request, "ToDo/check_time.html", context=context)
 
 
 def home(request):
@@ -67,7 +82,7 @@ def home(request):
 
         # Passing True if there should be an Insights highlight
         insights_highlight = False
-        today = datetime.datetime.today().date()
+        today = timezone.now().astimezone(request.user.profile.timezone).date()
         try:
             # Checking if user is a newly joined one
             if (today - request.user.profile.last_insights_date).days >= 7:
@@ -75,20 +90,21 @@ def home(request):
         except:
             # If an error, that means that the user is a new one
             # So we compare today with the day they joined
-            if (today - request.user.date_joined.date()).days >= 7:
+            if (today - request.user.date_joined.astimezone(request.user.profile.timezone).date()).days >= 7:
                 insights_highlight = True
 
         context = {
             "user_lists": user_lists,
             "list_form": list_form,
             "insights_highlight": insights_highlight,
-            "today_name": calendar.day_name[datetime.datetime.today().weekday()]
+            "today_name": calendar.day_name[timezone.now().astimezone(request.user.profile.timezone).weekday()]
         }
 
         return render(request, "ToDo/home.html", context=context)
 
     else:
         return render(request, "ToDo/home_logged_out.html")
+
 
 @login_required
 def search(request):
@@ -129,8 +145,6 @@ def search(request):
                 "matching_attachments": matching_attachments,
             }
 
-            print(matching_attachments)
-
             if len(matching_tasks) == 0 and len(matching_subtasks) == 0 and len(matching_lists) == 0 and len(matching_notes) == 0 and len(matching_attachments) == 0:
                 results = "got nothing"
 
@@ -160,14 +174,18 @@ def todo_detail(request, title, pk):
     except:
         note = Notes()
 
-    
+    # Checking for due date color
     if todo.due_date is not None:
-        today = datetime.datetime.today()
-        if todo.due_date.date() == today.date():
+        # Comparing with user's local timezone
+        today = timezone.now().astimezone(request.user.profile.timezone)
+        todo_due_date_tz = todo.due_date.astimezone(
+            request.user.profile.timezone)
+
+        if todo_due_date_tz.date() == today.date():
             todo.due_date_color = "blue"
-        elif todo.due_date.date() > today.date():
+        elif todo_due_date_tz.date() > today.date():
             todo.due_date_color = "green"
-        elif todo.due_date.date() < today.date():
+        elif todo_due_date_tz.date() < today.date():
             todo.due_date_color = "red"
 
         todo.save()
@@ -190,7 +208,7 @@ def todo_detail(request, title, pk):
                 todo.save()
 
             messages.success(request, "Your files were uploaded successfully")
-        
+
     else:
         attachment_form = TaskAttachmentForm()
 
@@ -206,7 +224,7 @@ def todo_detail(request, title, pk):
         "due_form": DueDateForm(),
         "title": todo.title,
         "percentage": percentage,
-        "attachments": attachments
+        "attachments": attachments,
     }
 
     return render(request, "ToDo/detailed_view.html", context=context)
@@ -279,6 +297,7 @@ def tasklist_single_view(request, title, pk=None, **kwargs):
                 title=title, pk=pk, owner=request.user)
         except:
             return render(request, "ToDo/restrict_access.html")
+
         todos = ToDo.objects.filter(
             parent_list=tasklist, creator=request.user)
 
@@ -302,6 +321,7 @@ def create(request):
     Universal function to create ToDos, Subtasks and Notes. It can also be used to create Due Dates
     with AJAX support for asynchronous operation
     Having a single function will make sure to have only one URL for creating objects
+    Attachments cannot be created with this function as they need to be uploaded with no AJAX support
     """
 
     # Setting up dummy variables to avoid any UnboundLocal Errors
@@ -377,7 +397,7 @@ def create(request):
             response_data = {}
             response_data["note_content"] = new_note.content
             response_data["note_pk"] = new_note.pk
-            response_data["note_created"] = new_note.date_added.strftime(
+            response_data["note_created"] = new_note.date_added.astimezone(request.user.profile.timezone).strftime(
                 "%b %d, %Y")
 
         elif item_type == "due_date":
@@ -394,21 +414,26 @@ def create(request):
             else:
                 days = int(days)
 
-            today = datetime.datetime.today()
-            due_date = today + datetime.timedelta(days=days)
+            today = timezone.now()
+            due_date = today + timezone.timedelta(days=days)
 
             parent_task.due_date = due_date
 
-            if today.date() == due_date.date():
+            # Converting to user-specified timezone
+            user_tz_today = today.astimezone(request.user.profile.timezone)
+            due_date_user_tz = due_date.astimezone(
+                request.user.profile.timezone)
+
+            if user_tz_today.date() == due_date_user_tz.date():
                 parent_task.due_date_color = "blue"
-            elif today.date() > due_date.date():
+            elif user_tz_today.date() > due_date_user_tz.date():
                 parent_task.due_date_color = "red"
-            elif today.date() < due_date.date():
+            elif user_tz_today.date() < due_date_user_tz.date():
                 parent_task.due_date_color = "green"
 
             parent_task.save()
 
-            response_data["due_date"] = due_date.strftime("%b %d")
+            response_data["due_date"] = due_date_user_tz.strftime("%b %d")
             response_data["due_date_color"] = parent_task.due_date_color
             response_data["parent_task_pk"] = parent_task.pk
 
@@ -441,8 +466,9 @@ def delete(request):
                 todo = ToDo.objects.get(pk=pk, creator=request.user)
             except:
                 # Security check
-                response = HttpResponse(json.dumps({"error": "Your access is denied"}))
-                response.status_code = 403 # To announce that the user isn't allowed to proceed
+                response = HttpResponse(json.dumps(
+                    {"error": "Your access is denied"}))
+                response.status_code = 403  # To announce that the user isn't allowed to proceed
                 return response
 
             # removing this todos attachments from server
@@ -461,12 +487,14 @@ def delete(request):
                 if subtask.parent_task.creator != request.user:
                     raise PermissionDenied
             except PermissionDenied:
-                response = HttpResponse(json.dumps({"error": "Your access is denied"}))
-                response.status_code = 403 # To announce that the user isn't allowed to proceed
+                response = HttpResponse(json.dumps(
+                    {"error": "Your access is denied"}))
+                response.status_code = 403  # To announce that the user isn't allowed to proceed
                 return response
             except:
-                response = HttpResponse(json.dumps({"error": "There was a server error"}))
-                response.status_code = 500 # A server error e.g subtask with this pk does not exist
+                response = HttpResponse(json.dumps(
+                    {"error": "There was a server error"}))
+                response.status_code = 500  # A server error e.g subtask with this pk does not exist
                 return response
 
             subtask.delete()
@@ -481,12 +509,14 @@ def delete(request):
                 if notes.parent_task.creator != request.user:
                     raise PermissionDenied
             except PermissionDenied:
-                response = HttpResponse(json.dumps({"error": "Your access is denied"}))
-                response.status_code = 403 # To announce that the user isn't allowed to proceed
+                response = HttpResponse(json.dumps(
+                    {"error": "Your access is denied"}))
+                response.status_code = 403  # To announce that the user isn't allowed to proceed
                 return response
             except:
-                response = HttpResponse(json.dumps({"error": "There was a server error"}))
-                response.status_code = 500 # A server error e.g note with this pk doesn't exist
+                response = HttpResponse(json.dumps(
+                    {"error": "There was a server error"}))
+                response.status_code = 500  # A server error e.g note with this pk doesn't exist
                 return response
 
             notes.delete()
@@ -497,12 +527,14 @@ def delete(request):
                 if tasklist.owner != request.user:
                     raise PermissionDenied
             except PermissionDenied:
-                response = HttpResponse(json.dumps({"error": "Your access is denied"}))
-                response.status_code = 403 # To announce that the user isn't allowed to proceed
+                response = HttpResponse(json.dumps(
+                    {"error": "Your access is denied"}))
+                response.status_code = 403  # To announce that the user isn't allowed to proceed
                 return response
             except:
-                response = HttpResponse(json.dumps({"error": "There was a server error"}))
-                response.status_code = 500 # Server error e.g TaskList with pk doesn't exist
+                response = HttpResponse(json.dumps(
+                    {"error": "There was a server error"}))
+                response.status_code = 500  # Server error e.g TaskList with pk doesn't exist
                 return response
 
             tasklist.delete()
@@ -510,9 +542,17 @@ def delete(request):
         elif item_type == "due_date":
             try:
                 parent_task = ToDo.objects.get(pk=pk)
+                if parent_task.creator != request.user:
+                    raise PermissionDenied
+            except PermissionDenied:
+                response = HttpResponse(json.dumps(
+                    {"error": "Your access is denied"}))
+                response.status_code = 403  # To announce that the user isn't allowed to proceed
+                return response
             except:
-                response = HttpResponse(json.dumps({"error": "Your access is denied"}))
-                response.status_code = 403 # To announce that the user isn't allowed to proceed
+                response = HttpResponse(json.dumps(
+                    {"error": "There was a server error"}))
+                response.status_code = 500  # Server error
                 return response
 
             parent_task.due_date = None
@@ -522,9 +562,17 @@ def delete(request):
         elif item_type == "attachment":
             try:
                 attachment = Attachments.objects.get(pk=pk)
+                if attachment.parent_task.creator != request.user:
+                    raise PermissionDenied
+            except PermissionDenied:
+                response = HttpResponse(json.dumps(
+                    {"error": "Your access is denied"}))
+                response.status_code = 403  # To announce that the user isn't allowed to proceed
+                return response
             except:
-                response = HttpResponse(json.dumps({"error": "Your access is denied"}))
-                response.status_code = 403 # To announce that the user isn't allowed to proceed
+                response = HttpResponse(json.dumps(
+                    {"error": "There was a server error"}))
+                response.status_code = 500  # Server error
                 return response
 
             attachment.delete()
@@ -550,11 +598,20 @@ def toggle_important_task(request):
     if request.method == "POST":
         pk = int(request.POST.get("pk"))
 
+        # Security check
         try:
             todo = ToDo.objects.get(pk=pk, creator=request.user)
+            if todo.creator != request.user:
+                raise PermissionDenied
+        except PermissionDenied:
+            response = HttpResponse(json.dumps(
+                {"error": "Your access is denied"}))
+            response.status_code = 403  # To announce that the user isn't allowed to proceed
+            return response
         except:
-            response = HttpResponse(json.dumps({"error": "Your access is denied"}))
-            response.status_code = 403 # To announce that the user isn't allowed to proceed
+            response = HttpResponse(json.dumps(
+                {"error": "There was a server error"}))
+            response.status_code = 500  # Server error
             return response
 
         if todo.important:
@@ -611,9 +668,17 @@ def toggle_todo(request):
         # Security check
         try:
             todo = ToDo.objects.get(pk=pk, creator=request.user)
+            if todo.creator != request.user:
+                raise PermissionDenied
+        except PermissionDenied:
+            response = HttpResponse(json.dumps(
+                {"error": "Your access is denied"}))
+            response.status_code = 403  # To announce that the user isn't allowed to proceed
+            return response
         except:
-            response = HttpResponse(json.dumps({"error": "Your access is denied"}))
-            response.status_code = 403 # To announce that the user isn't allowed to proceed
+            response = HttpResponse(json.dumps(
+                {"error": "There was a server error"}))
+            response.status_code = 500  # Server error
             return response
 
         if todo.is_checked:
@@ -621,7 +686,7 @@ def toggle_todo(request):
             todo.date_completed = None
         else:
             todo.is_checked = True
-            todo.date_completed = datetime.datetime.today()
+            todo.date_completed = timezone.now()
 
         todo.save()
 
@@ -629,7 +694,7 @@ def toggle_todo(request):
         response_data["todo_title"] = todo.title
         response_data["todo_pk"] = todo.pk
         try:
-            response_data["todo_date_completed"] = todo.date_completed.strftime(
+            response_data["todo_date_completed"] = todo.date_completed.astimezone(request.user.profile.timezone).strftime(
                 "%b %d")
         except:
             response_data["todo_date_completed"] = ""
@@ -657,7 +722,6 @@ def toggle_todo(request):
 
         response_data["show_tasks"] = show_tasks
 
-
         # Checking if we should show task metadata
         if todo.num_of_subtasks != 0 or todo.due_date is not None or todo.has_notes or todo.has_attachments:
             response_data["space_filler"] = "<br>"
@@ -679,7 +743,8 @@ def toggle_todo(request):
 
         if todo.due_date is not None:
             response_data["show_due_date_icon"] = "block"
-            response_data["due_date"] = todo.due_date.strftime("%b %d")
+            response_data["due_date"] = todo.due_date.astimezone(
+                request.user.profile.timezone).strftime("%b %d")
             response_data["due_date_color"] = todo.due_date_color
         else:
             response_data["show_due_date_icon"] = "none"
@@ -705,11 +770,16 @@ def toggle_subtask(request):
             subtask = SubTask.objects.get(pk=int(request.POST.get("pk")))
             if subtask.parent_task.creator != request.user:
                 raise PermissionDenied
-        except:
-            response = HttpResponse(json.dumps({"error": "Your access is denied"}))
-            response.status_code = 403 # To announce that the user isn't allowed to proceed
+        except PermissionDenied:
+            response = HttpResponse(json.dumps(
+                {"error": "Your access is denied"}))
+            response.status_code = 403  # To announce that the user isn't allowed to proceed
             return response
-            
+        except:
+            response = HttpResponse(json.dumps(
+                {"error": "There was a server error"}))
+            response.status_code = 500  # Server error
+            return response
 
         if subtask.done:
             subtask.done = False
@@ -721,8 +791,10 @@ def toggle_subtask(request):
         response_data = {}
 
         try:
-            all_subtasks = SubTask.objects.filter(parent_task=subtask.parent_task)
-            completed_tasks = SubTask.objects.filter(parent_task=subtask.parent_task).filter(done=True).count()
+            all_subtasks = SubTask.objects.filter(
+                parent_task=subtask.parent_task)
+            completed_tasks = SubTask.objects.filter(
+                parent_task=subtask.parent_task).filter(done=True).count()
             percentage = int((completed_tasks/all_subtasks.count()) * 100)
             print(percentage)
 
@@ -770,9 +842,10 @@ class ToDoNextUpView(LoginRequiredMixin, ListView):
         return query_set
 
     def get_context_data(self, **kwargs):
+        "Before sending out the context, we'll be converting each and every time to the user-specified timezone"
         context = super().get_context_data(**kwargs)
-        today = datetime.datetime.today()
-        tomorrow = today + datetime.timedelta(days=1)
+        today = timezone.now().astimezone(self.request.user.profile.timezone)
+        tomorrow = today + timezone.timedelta(days=1)
 
         todos_earlier = []
         todos_today = []
@@ -781,13 +854,16 @@ class ToDoNextUpView(LoginRequiredMixin, ListView):
 
         for todo in ToDo.objects.filter(creator=self.request.user, is_checked=False).order_by("due_date"):
             if todo.due_date is not None:
-                if todo.due_date.date() == today.date():
+                # We'll first convert todo's due date to local time then compare
+                todo_due_date_tz = todo.due_date.astimezone(
+                    self.request.user.profile.timezone)
+                if todo_due_date_tz.date() == today.date():
                     todos_today.append(todo)
-                elif todo.due_date.date() == tomorrow.date():
+                elif todo_due_date_tz.date() == tomorrow.date():
                     todos_tomorrow.append(todo)
-                elif todo.due_date.date() < today.date():
+                elif todo_due_date_tz.date() < today.date():
                     todos_earlier.append(todo)
-                elif todo.due_date.date() > tomorrow.date():
+                elif todo_due_date_tz.date() > tomorrow.date():
                     todos_later.append(todo)
 
         context["todos_earlier"] = todos_earlier
@@ -811,7 +887,6 @@ class ToDoFilesView(LoginRequiredMixin, ListView):
                 query_set.append(attachment)
 
         return query_set
-
 
 
 class TodoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):

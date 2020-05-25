@@ -2,6 +2,7 @@
 {% block content %}
 {% load crispy_forms_tags %}
 {% load filename %}
+{% load tz %}
 
 <div class="content-section dark-mode-assist-section">
     <h1 style="text-align: center; margin-left: 33px;">
@@ -23,8 +24,8 @@
             {% if request.user_agent.is_mobile %}
                 <br>
             {% endif %}
-            <button id="todo-btn-{{ todo.pk }}" style="float:left; margin-top: 13px;" onclick="toggleTodo('{{ todo.pk }}', 'check', 'detail-view')"
-                class="btn btn-outline-success">
+            <button id="todo-btn-{{ todo.pk }}" style="float:left; margin-top: 13px;" onclick="toggleTodo('{{ todo.pk }}', 'uncheck', 'detail-view')"
+                class="btn btn-success">
                 <i class="fa fa-check"></i>
             </button>
         {% endif %}
@@ -49,11 +50,11 @@
         {% endif %}  
     </h1>
 
-    <small>Created on: {{ todo.date_created|date:"F d" }}</small>
+    <small>Created on: {{ todo.date_created|timezone:request.user.profile.timezone|date:"F d" }}</small>
 
     <br>
     {% if todo.is_checked %}
-        <small id="completed-small-text">Completed on: {{ todo.date_completed|date:"F d" }}</small>
+        <small id="completed-small-text">Completed on: {{ todo.date_completed|timezone:request.user.profile.timezone|date:"F d" }}</small>
     {% endif %}
     <small id="completed-small-text-hidden"></small>
 
@@ -61,7 +62,7 @@
 
     {% if todo.due_date != None %}
         <p id="due-date-content-{{ todo.pk }}" style="font-size: 25px; color: {{ todo.due_date_color }}">
-            Due on: {{ todo.due_date|date:"F d" }} 
+            Due on: {{ todo.due_date|timezone:request.user.profile.timezone|date:"F d" }} 
             <button onclick="deleteItem('due_date', {{ todo.pk }})" class="btn btn-outline-danger">
                 <i class="fa fa-trash">
                 </i>
@@ -150,9 +151,15 @@
                         <a id="subtask-title-{{ subtask.pk }}" style="color:inherit; text-decoration: none;" href="{% url 'todo-edit-subtask' subtask.pk %}">
                             {{ subtask.title }} 
                         </a>
-                        <button onclick="deleteItem('subtask', {{ subtask.pk }})" type="submit" 
-                            style="float: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i>
-                        </button>
+                        {% if request.user_agent.is_mobile %}
+                            <button onclick="deleteItem('subtask', {{ subtask.pk }})" type="submit" 
+                                style="text-align: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i>
+                            </button>
+                        {% else %}
+                            <button onclick="deleteItem('subtask', {{ subtask.pk }})" type="submit" 
+                                style="float: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i>
+                            </button>
+                        {% endif %}
                     </li>
                 {% else %}
                     <li class="content-section hoverable-item" id="subtask-items-{{ subtask.pk }}" style="font-size: 23px">
@@ -164,9 +171,15 @@
                             href="{% url 'todo-edit-subtask' subtask.pk %}"> 
                             {{ subtask.title }} 
                         </a>
-                        <button onclick="deleteItem('subtask', {{ subtask.pk }})" type="submit" 
-                            style="float: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i>
-                        </button>
+                        {% if request.user_agent.is_mobile %}
+                            <button onclick="deleteItem('subtask', {{ subtask.pk }})" type="submit" 
+                                style="text-align: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i>
+                            </button>
+                        {% else %}
+                            <button onclick="deleteItem('subtask', {{ subtask.pk }})" type="submit" 
+                                style="float: right;" class="btn btn-outline-danger"><i class="fas fa-trash"></i>
+                            </button>
+                        {% endif %}
                     </li>
                 {% endif %}
             {% endfor %}
@@ -233,11 +246,11 @@
             </h3>
             <p id="notes-metadata">
                 <br>
-                Notes added on: <b>{{ note.date_added|date:"F d, Y" }}</b>
+                Notes added on: <b>{{ note.date_added|timezone:request.user.profile.timezone|date:"F d, Y" }}</b>
                 <br>
 
                 {% if note.date_edited != note.date_added %}
-                    Notes edited on: <b>{{ note.date_edited|date:"F d, Y" }}</b>
+                    Notes edited on: <b>{{ note.date_edited|timezone:request.user.profile.timezone|date:"F d, Y" }}</b>
                 {% endif %}
             </p>
         </div>
@@ -308,7 +321,7 @@
                 {% for attachment in attachments %}
                     <tr class="hoverable-item dark-mode-assist-section" id="attachment-{{ attachment.pk }}">
                         <td>{{ attachment.content|getfilename }}</td>
-                        <td>{{ attachment.uploaded_on|date:"F d"}}</td>
+                        <td>{{ attachment.uploaded_on|timezone:request.user.profile.timezone|date:"F d"}}</td>
                         <td><a class="btn btn-outline-success" href="{{ attachment.content.url }}">Click me <i class="fas fa-download"></i></a></td>
                         <td>
                             <button style="font-size: 2.5ch;" data-toggle="modal" data-target="#exampleModalCenter{{ attachment.pk }}" class="btn btn-outline-danger">

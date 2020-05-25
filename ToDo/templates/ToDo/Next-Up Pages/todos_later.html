@@ -1,6 +1,8 @@
 {% extends "ToDo/Next-Up Pages/next_up_generic.html" %}
 {% block due %}
+{% load tz %}
+
 <h3 style="color:seagreen">
-    Due on: {{ todo.due_date|date:"F d" }}
+    Due on: {{ todo.due_date|timezone:request.user.profile.timezone|date:"F d" }}
 </h3>
 {% endblock due %}

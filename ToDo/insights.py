@@ -1,29 +1,30 @@
 """
-This is a function that will analyze the user behavior and calculate how well they are managing their tasks
-In this function, we are going to convert all the DateTime objects to Date objects just for the sake for
+This is a module that will analyze the user behavior and calculate how well they are managing their tasks
+In this module, we are going to convert all the DateTime objects to Date objects just for the sake for
 better comparision.
 Although DateTime objects offer better precision as they also have time but for this function to properly analyze how many
 tasks are being created and completed, just comparing the dates is more precise since DateTime objects will not show a whole new
-day unless the hour of the day matches too. For this function, it must be called as soon as it is Monday and it's past 7 days
+day unless the hour of the day matches too. This module must act as soon as it is Monday and it's past 7 days
 since the user's previous insights date. Also, todos created and completed on the last minute will also be considered by the AI
 if we use only dates.
 """
 
 
 import calendar
-import datetime
 import os
 
 import seaborn as sns
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.shortcuts import render
+from django.utils import timezone
 from matplotlib import pyplot as plt
 
 from .models import ToDo
 
 
-def draw_bar_graph(user_todos_this_week, user):
+def draw_bar_graph(user_todos_this_week, user, path):
     day_completions = {
         "Monday": 0,
         "Tuesday": 0,
@@ -37,12 +38,12 @@ def draw_bar_graph(user_todos_this_week, user):
     if user.profile.theme == "dark":
         plt.style.use("dark_background")
 
+    # Constant to keep track of user directory for graphs
+    GRAPH_DIR = f"{settings.MEDIA_ROOT}/users/{user}_{user.pk}/insights_graphs/"
     # Checking if this user's 'insights_graphs' dir exists or not
-    if not os.path.exists(f"media/users/{user}_{user.pk}/insights_graphs/"):
+    if not os.path.exists(GRAPH_DIR):
         # If it doesn't, then we'll create one for them
-        os.mkdir(f"media/users/{user}_{user.pk}/insights_graphs/")
-
-    path = f"media/users/{user}_{user.pk}/insights_graphs/graph_this_week.png"
+        os.mkdir(GRAPH_DIR)
 
     for todo in user_todos_this_week:
         day_completions[calendar.day_name[todo.date_completed.weekday()]] += 1
@@ -70,9 +71,12 @@ def draw_bar_graph(user_todos_this_week, user):
 
 @login_required
 def render_insights(request):
-    today = datetime.datetime.today()
+    today = timezone.now().astimezone(request.user.profile.timezone)
     user = User.objects.get(username=request.user.username)
     user_todos = ToDo.objects.filter(creator=user)
+
+    # Constant to keep track of where the graph is being drawn and stored
+    GRAPH_PATH = f"{settings.MEDIA_ROOT}/users/{user}_{user.pk}/insights_graphs/graph_this_week.png"
 
     user_total_todos = user_todos.count()
     user_active_todos = ToDo.objects.filter(
@@ -80,10 +84,10 @@ def render_insights(request):
 
     # Enabling user's Insights Page
     if not user.profile.insights_enabled:
-        if (today.date() - user.date_joined.date()).days >= 7:
+        if (today.date() - user.date_joined.astimezone(request.user.profile.timezone).date()).days >= 7:
             user.profile.insights_enabled = True
             previous_monday = (
-                today - datetime.timedelta(days=today.weekday())) - datetime.timedelta(days=7)
+                today - timezone.timedelta(days=today.weekday())) - timezone.timedelta(days=7)
             user.profile.last_insights_date = previous_monday.date()
             user.save()
 
@@ -121,9 +125,9 @@ def render_insights(request):
                 else:
                     # If today is not a Monday (that means that the user has visited the place after Monday), we'll analyze todos till the last Monday
                     date_ranger = (
-                        today - datetime.timedelta(days=today.weekday())).date()
+                        today - timezone.timedelta(days=today.weekday())).date()
 
-                if (date_ranger - todo.date_created.date()).days <= 7:
+                if (date_ranger - todo.date_created.astimezone(request.user.profile.timezone).date()).days <= 7:
                     todos_created_this_week.append(todo)
                     if todo.is_checked:
                         todos_completed_this_week.append(todo)
@@ -167,11 +171,11 @@ def render_insights(request):
             # Second, how many tasks they added this week and completed ON TIME (by due date), IF their tasks had at least one due date
             # Also, we'll be calculating how many tasks they completed after the due date
             todos_with_due_dates = [
-                todo for todo in todos_completed_this_week if todo.due_date is not None]
+                todo for todo in user_todos if todo.due_date is not None and todo.is_checked]
             if todos_with_due_dates:
                 todos_completed_on_time = 0
                 for todo in todos_with_due_dates:
-                    if todo.date_completed.date() <= todo.due_date.date():
+                    if todo.date_completed.astimezone(request.user.profile.timezone).date() <= todo.due_date.astimezone(request.user.profile.timezone).date():
                         todos_completed_on_time += 1
 
                 user.profile.todos_completed_on_time = todos_completed_on_time
@@ -184,7 +188,7 @@ def render_insights(request):
             for todo in [todo for todo in user_todos if todo.due_date is not None]:
                 if todo.is_checked:
                     if (date_ranger - todo.date_completed.date()).days <= 7:
-                        if todo.date_completed.date() >= todo.due_date.date():
+                        if todo.date_completed.astimezone(request.user.profile.timezone).date() >= todo.due_date.astimezone(request.user.profile.timezone).date():
                             todos_completed_after_due_date += 1
 
             user.profile.todos_completed_after_due_date = todos_completed_after_due_date
@@ -194,7 +198,7 @@ def render_insights(request):
             todos_completed_but_created_long_ago = 0
             for todo in user_todos:
                 if todo.date_completed is not None:
-                    if (date_ranger - todo.date_completed.date()).days <= 7 and todo not in todos_created_this_week:
+                    if (date_ranger - todo.date_completed.astimezone(request.user.profile.timezone).date()).days <= 7 and todo not in todos_created_this_week:
                         todos_completed_but_created_long_ago += 1
 
             user.profile.todos_completed_created_long_ago = todos_completed_but_created_long_ago
@@ -209,6 +213,7 @@ def render_insights(request):
             user.profile.important_tasks_completed_this_week = important_todos_completed
             user.save()
 
+            # Lastly, let's also calculate how many tasks the user created but couldn't complete
             todos_missed = len(
                 [todo for todo in todos_created_this_week if todo not in todos_completed_this_week])
             user.profile.missed_tasks_this_week = todos_missed
@@ -223,10 +228,10 @@ def render_insights(request):
             # We'll only send todos that were completed this week (regardless of when they were created)
             for todo in user_todos:
                 if todo.is_checked:
-                    if (date_ranger - todo.date_completed.date()).days <= 7:
+                    if (date_ranger - todo.date_completed.astimezone(request.user.profile.timezone).date()).days <= 7:
                         user_todos_this_week.append(todo)
 
-            draw_bar_graph(user_todos_this_week, user)
+            draw_bar_graph(user_todos_this_week, user, GRAPH_PATH)
 
             ready = "show content"
 
@@ -234,8 +239,8 @@ def render_insights(request):
             ready = "show content"
 
         week_range = f"""
-        This is your data from {determine_ordinal((user.profile.last_insights_date-datetime.timedelta(days=7)).day)}
-        {calendar.month_name[(user.profile.last_insights_date-datetime.timedelta(days=7)).month]} till
+        This is your data from {determine_ordinal((user.profile.last_insights_date-timezone.timedelta(days=7)).day)}
+        {calendar.month_name[(user.profile.last_insights_date-timezone.timedelta(days=7)).month]} till
         {determine_ordinal(user.profile.last_insights_date.day)} {calendar.month_name[user.profile.last_insights_date.month]}
         """
 
@@ -244,7 +249,7 @@ def render_insights(request):
         week_range = None
 
     img_exists = False
-    if os.path.isfile(f"media/users/{user}_{user.pk}/insights_graphs/graph_this_week.png"):
+    if os.path.isfile(GRAPH_PATH):
         img_exists = True
 
     context = {
@@ -253,7 +258,17 @@ def render_insights(request):
         "week_range": week_range,
         "img_exists": img_exists,
         "user_total_todos": user_total_todos,
-        "user_active_todos": user_active_todos
+        "user_active_todos": user_active_todos,
+        "todos_created_this_week": user.profile.todos_created_this_week,
+        "todos_completed_this_week": user.profile.todos_completed_this_week,
+        "efficiency_this_week": user.profile.efficiency_this_week,
+        "efficiency_change": user.profile.efficiency_change,
+        "efficiency_change_type": user.profile.efficiency_change_type,
+        "todos_on_time": user.profile.todos_completed_on_time,
+        "todos_after_due_date": user.profile.todos_completed_after_due_date,
+        "completed_created_long_ago": user.profile.todos_completed_created_long_ago,
+        "important_todos_completed": user.profile.important_tasks_completed_this_week,
+        "missed_todos": user.profile.missed_tasks_this_week,
     }
 
     return render(request, "ToDo/insights.html", context=context)
