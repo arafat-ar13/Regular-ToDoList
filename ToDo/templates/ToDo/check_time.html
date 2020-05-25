@@ -1,0 +1,20 @@
+{% extends "ToDo/base.html" %}
+{% load static %}
+{% block content %}
+{% load tz %}
+
+<div class="content-section dark-mode-assist-section">
+    <h1>Check if your local time is accurate</h1>
+    <br><br>
+    <h2>Server time: <b>{{ server_time }}</b> (UTC)</h2>
+    {% localtime off %}
+        <h2>Your time: <b>{{ user_localtime }}</b> ({{ request.user.profile.timezone }})</h2>
+    {% endlocaltime %}
+    <p>
+        Time off by an hour or so? Update your time zone to the most accurate possible and also make sure your timezone
+        adjusts for Daylight Savings Time (DST)
+    </p>
+</div>
+
+
+{% endblock content %}

@@ -29,6 +29,7 @@ urlpatterns = [
     path('contact-me/', todo_views.contact_me, name="contact-me"),
     path('insights/', insights.render_insights, name="insights"),
     path('new_2.0/', todo_views.new_ver2, name="new-v2"),
+    path('check_time', todo_views.check_time, name="check-time"),
     path('register/', user_views.register, name="register"),
     path('login/', auth_views.LoginView.as_view(template_name="users/login.html", redirect_authenticated_user=True), name="login"),
     path('profile/', user_views.profile, name="profile"),

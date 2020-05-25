@@ -3,7 +3,6 @@ import os
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
-from django.conf import settings
 
 
 class TaskList(models.Model):
@@ -59,8 +58,8 @@ class SubTask(models.Model):
 class Notes(models.Model):
     content = models.TextField(
         help_text="Add anything that's important to the task")
-    date_added = models.DateField(auto_now_add=True)
-    date_edited = models.DateField(auto_now=True)
+    date_added = models.DateTimeField(auto_now_add=True)
+    date_edited = models.DateTimeField(auto_now=True)
     parent_task = models.ForeignKey(ToDo, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -80,7 +79,7 @@ def get_attachment_dir(instance, filename):
 
 
 class Attachments(models.Model):
-    content = models.FileField(null=True, blank=True, upload_to=get_attachment_dir, help_text="Add important documents or pictures")
+    content = models.FileField(upload_to=get_attachment_dir, help_text="Add important documents or pictures")
     parent_task = models.ForeignKey(ToDo, on_delete=models.CASCADE)
     uploaded_on = models.DateTimeField(auto_now_add=True)
 

@@ -25,6 +25,9 @@
                 <legend class="border-bottom mb-4">Profile info</legend>
                 {{ u_form|crispy }}
                 {{ p_form|crispy }}
+                {{ tz_form|crispy }}
+                <a href="{% url 'check-time' %}">Check your time for accuracy</a>
+                <br><br>
                 <a href="{% url 'password_reset' %}">Do you want to change your password?</a>
                 <br>
                 <small>Please keep in mind that you will be logged out after reset</small>
