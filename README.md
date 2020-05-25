@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 # The 2.0 version of this app is now fully alive and developed with <3
-=======
-# The 2.0 version of this app if now fully alive and developed with <3
->>>>>>> f2a0a2bb4f5d9a073cf180a483cb839b37228edd
 
 This is the repo of the 2.0 version of my to-do list app. The app was taken down from PythonAnywhere servers and I developed it locally. In the previous version, the app was
 really simple and had several security holes. I have re-written the infrastructure of the app and every part of the app was
