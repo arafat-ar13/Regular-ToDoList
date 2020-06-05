@@ -2,7 +2,7 @@
 
 This is the repo of the 2.0 version of my to-do list app. The app was taken down from PythonAnywhere servers and I developed it locally. In the previous version, the app was
 really simple and had several security holes. I have re-written the infrastructure of the app and every part of the app was
-re-developed. It is now a not-so-simple app with some decently awesome features and all those security vulnerabilities were 
+re-developed. It is now a not-so-simple app with some decently awesome features and all those security vulnerabilities were
 patched.
 
 ![A demo image of the ToDo App Home Page](/project_images/app_glance.png)
@@ -19,7 +19,7 @@ patched.
   * Attachments
 * Powerful Search feature to look for anything.
 * Smart Pages like "Important", "Next Up" and "Your Files".
-* App has a feature called Insights, which is really powerful and every week gives the user a report of how productive they were. It also uses Matplotlib to plot graphs to show the user. Neat!
+* App has a feature called Insights, which is really powerful and every week gives the user a report of how productive they were. It also uses Matplotlib to plot graphs to show the user. Neat! [Read more about it](https://github.com/arafat-ar13/Regular-ToDoList/wiki/Insights-Page)
 * The app has Dark Mode which looks stunning!
 * Bootstrap CSS has been used to make the app look and feel Premium and Beautiful.
 * The app has AJAX support baked in so that almost all the operations in the app is now Asynchronous, no reloads ever!
