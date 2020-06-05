@@ -231,6 +231,9 @@ def render_insights(request):
                     if (date_ranger - todo.date_completed.astimezone(request.user.profile.timezone).date()).days <= 7:
                         user_todos_this_week.append(todo)
 
+            # We remove any previously present graphs to avoid showing same graph to users since we are naming them same
+            if os.path.isfile(GRAPH_PATH):
+                os.remove(GRAPH_PATH)
             draw_bar_graph(user_todos_this_week, user, GRAPH_PATH)
 
             ready = "show content"

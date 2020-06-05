@@ -336,7 +336,7 @@ def create(request):
         item_type = request.POST.get("item_type")
 
         if item_type == "due_date":
-            days = request.POST.get("due_date").lower()
+            days = request.POST.get("due_date").lower().strip()
         elif item_type != "notes":
             title = request.POST.get("title")
         else:
