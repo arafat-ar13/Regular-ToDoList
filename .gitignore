@@ -1,10 +1,6 @@
 .vscode/
-Django_ToDo_App/__pycache__/
-ToDo/__pycache__/
-ToDo/migrations/__pycache__/
-users/__pycache__/
-users/migrations/__pycache__/
 .env
 media/
 Thumbs.db
 db.sqlite3
+__pycache__/
