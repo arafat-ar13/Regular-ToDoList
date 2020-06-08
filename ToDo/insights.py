@@ -46,7 +46,7 @@ def draw_bar_graph(user_todos_this_week, user, path):
         os.mkdir(GRAPH_DIR)
 
     for todo in user_todos_this_week:
-        day_completions[calendar.day_name[todo.date_completed.weekday()]] += 1
+        day_completions[calendar.day_name[todo.date_completed.astimezone(user.profile.timezone).weekday()]] += 1
 
     # We'll only proceed to drawing the graph if they user had completed at least one task over the week
     draw = False
