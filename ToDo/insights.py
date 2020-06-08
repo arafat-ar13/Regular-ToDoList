@@ -68,12 +68,19 @@ def draw_bar_graph(user_todos_this_week, user, path):
 
         plt.savefig(path)
 
+        print("Graph drawn and stored successfully")
+
+    else:
+        print("Graph was not drawn due to the lack of enough data")
+
 
 @login_required
 def render_insights(request):
     today = timezone.now().astimezone(request.user.profile.timezone)
     user = User.objects.get(username=request.user.username)
     user_todos = ToDo.objects.filter(creator=user)
+
+    print("Insights Page visited")
 
     # Constant to keep track of where the graph is being drawn and stored
     GRAPH_PATH = f"{settings.MEDIA_ROOT}/users/{user}_{user.pk}/insights_graphs/graph_this_week.png"
@@ -91,11 +98,15 @@ def render_insights(request):
             user.profile.last_insights_date = previous_monday.date()
             user.save()
 
+            print("User is a new one. Enabled their Insights Page")
+
     # Allowing users to have their Insights Page this week if they haven't already
     if user.profile.insights_enabled:
         if (today.date() - user.profile.last_insights_date).days >= 7:
             user.profile.generated_insights_this_week = False
             user.save()
+
+            print("Insights generated this week set to False. Insights should be calculated")
 
     # Creating a ordinal indicator function
     def determine_ordinal(date):
@@ -111,9 +122,15 @@ def render_insights(request):
         num_with_ordinal = str(date) + ordinal
         return num_with_ordinal
 
+    def print_info(stat_type, visiblity):
+        msg_to_print = f"Stat: '{stat_type}' calculated. Visibility: {visibility} in HTML"
+        print(msg_to_print)
+
     if user.profile.insights_enabled:
         # We'll determine if a whole week has passed since the user got their previous insights page
         if (today.date() - user.profile.last_insights_date).days >= 7 and not user.profile.generated_insights_this_week:
+            print("Everything checked out. Attempting to calculate stats")
+
             # First, how many tasks they added this week and how many they actually completed
             todos_created_this_week = []
             todos_completed_this_week = []
@@ -127,7 +144,7 @@ def render_insights(request):
                     date_ranger = (
                         today - timezone.timedelta(days=today.weekday())).date()
 
-                if (date_ranger - todo.date_created.astimezone(request.user.profile.timezone).date()).days <= 7:
+                if (date_ranger - todo.date_created.astimezone(user.profile.timezone).date()).days <= 7:
                     todos_created_this_week.append(todo)
                     if todo.is_checked:
                         todos_completed_this_week.append(todo)
@@ -136,6 +153,13 @@ def render_insights(request):
             user.profile.todos_completed_this_week = len(
                 todos_completed_this_week)
             user.save()
+
+            if len(todos_created_this_week) > 0 or len(todos_completed_this_week) > 0:
+                visibility = "shown"
+            else:
+                visibility = "hidden"
+
+            print_info("todos created/completed", visibility)
 
             # Calculating user efficiency this week and if possible comparing with last week's
             efficiency_change = False
@@ -147,8 +171,12 @@ def render_insights(request):
             try:
                 user.profile.efficiency_this_week = int(
                     (user.profile.todos_completed_this_week / user.profile.todos_created_this_week) * 100)
+                print_info("efficiency this week", "shown")
+
             except ZeroDivisionError:
                 user.profile.efficiency_this_week = 0
+                print_info("efficiency this week", "hidden")
+
             user.save()
 
             # So if an efficiency change exists, we'll see if this is an improvement or not
@@ -168,41 +196,48 @@ def render_insights(request):
                 user.profile.efficiency_change_type = efficiency[0]
                 user.save()
 
+                print_info("efficiency change", "shown")
+
+
             # Second, how many tasks they added this week and completed ON TIME (by due date), IF their tasks had at least one due date
-            # Also, we'll be calculating how many tasks they completed after the due date
-            todos_with_due_dates = [
-                todo for todo in user_todos if todo.due_date is not None and todo.is_checked]
-            if todos_with_due_dates:
-                todos_completed_on_time = 0
-                for todo in todos_with_due_dates:
-                    if todo.date_completed.astimezone(request.user.profile.timezone).date() <= todo.due_date.astimezone(request.user.profile.timezone).date():
+            todos_with_due_dates_this_week = [
+                todo for todo in user_todos if todo.due_date is not None and todo.is_checked and ((date_ranger - todo.date_completed.astimezone(user.profile.timezone).date()).days <= 7)]
+
+            todos_completed_on_time = 0
+            todos_completed_after_due_date = 0 # Also, we'll be calculating how many tasks they completed after the due date
+
+            if todos_with_due_dates_this_week:
+                for todo in todos_with_due_dates_this_week:
+                    if todo.date_completed.astimezone(user.profile.timezone).date() <= todo.due_date.astimezone(user.profile.timezone).date():
                         todos_completed_on_time += 1
+                    if todo.date_completed.astimezone(user.profile.timezone).date() >= todo.due_date.astimezone(user.profile.timezone).date():
+                        todos_completed_after_due_date += 1
 
-                user.profile.todos_completed_on_time = todos_completed_on_time
-
-            else:
-                user.profile.todos_completed_on_time = 0
-
-            todos_completed_after_due_date = 0
-            # Looping over all user tasks that had due dates
-            for todo in [todo for todo in user_todos if todo.due_date is not None]:
-                if todo.is_checked:
-                    if (date_ranger - todo.date_completed.date()).days <= 7:
-                        if todo.date_completed.astimezone(request.user.profile.timezone).date() >= todo.due_date.astimezone(request.user.profile.timezone).date():
-                            todos_completed_after_due_date += 1
-
+            user.profile.todos_completed_on_time = todos_completed_on_time
             user.profile.todos_completed_after_due_date = todos_completed_after_due_date
             user.save()
+
+            if todos_completed_on_time > 0 or todos_completed_after_due_date > 0:
+                visibility = "shown"
+            else:
+                visibility = "hidden"
+
+            print_info("todos completed on time/after due date", visibility)
 
             # We also want to calculate how many tasks they completed this week that they created long before this week
             todos_completed_but_created_long_ago = 0
             for todo in user_todos:
                 if todo.date_completed is not None:
-                    if (date_ranger - todo.date_completed.astimezone(request.user.profile.timezone).date()).days <= 7 and todo not in todos_created_this_week:
+                    if (date_ranger - todo.date_completed.astimezone(user.profile.timezone).date()).days <= 7 and todo not in todos_created_this_week:
                         todos_completed_but_created_long_ago += 1
 
             user.profile.todos_completed_created_long_ago = todos_completed_but_created_long_ago
             user.save()
+
+            if todos_completed_but_created_long_ago > 0:
+                print_info("todos completed but created long ago", "shown")
+            else:
+                print_info("todos completed but created long ago", "hidden")
 
             # Fourth, we want to show how many important task they completed over the week
             important_todos_completed = 0
@@ -213,11 +248,22 @@ def render_insights(request):
             user.profile.important_tasks_completed_this_week = important_todos_completed
             user.save()
 
+            if important_todos_completed > 0:
+                print_info("important todos completed", "shown")
+            else:
+                print_info("important todos completed", "hidden")
+
+
             # Lastly, let's also calculate how many tasks the user created but couldn't complete
             todos_missed = len(
                 [todo for todo in todos_created_this_week if todo not in todos_completed_this_week])
             user.profile.missed_tasks_this_week = todos_missed
             user.save()
+
+            if todos_missed > 0:
+                print_info("missed todos", "shown")
+            else:
+                print_info("missed todos", "hidden")
 
             user.profile.last_insights_date = date_ranger
             user.profile.generated_insights_this_week = True
@@ -228,18 +274,24 @@ def render_insights(request):
             # We'll only send todos that were completed this week (regardless of when they were created)
             for todo in user_todos:
                 if todo.is_checked:
-                    if (date_ranger - todo.date_completed.astimezone(request.user.profile.timezone).date()).days <= 7:
+                    if (date_ranger - todo.date_completed.astimezone(user.profile.timezone).date()).days <= 7:
                         user_todos_this_week.append(todo)
 
             # We remove any previously present graphs to avoid showing same graph to users since we are naming them same
             if os.path.isfile(GRAPH_PATH):
                 os.remove(GRAPH_PATH)
+
+            print("Attempting to draw bar chart")
             draw_bar_graph(user_todos_this_week, user, GRAPH_PATH)
 
             ready = "show content"
 
+            print("The analysis was done perfectly and with hard work")
+
         else:
             ready = "show content"
+
+            print("No analysis was done. Wait till next Monday or the next scheduled date")
 
         week_range = f"""
         This is your data from {determine_ordinal((user.profile.last_insights_date-timezone.timedelta(days=7)).day)}
@@ -250,6 +302,8 @@ def render_insights(request):
     else:
         ready = "AI is still learning"
         week_range = None
+
+        print(ready + " so that is why we cannot compute anything now")
 
     img_exists = False
     if os.path.isfile(GRAPH_PATH):
