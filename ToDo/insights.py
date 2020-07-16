@@ -210,7 +210,7 @@ def render_insights(request):
                 for todo in todos_with_due_dates_this_week:
                     if todo.date_completed.astimezone(user.profile.timezone).date() <= todo.due_date.astimezone(user.profile.timezone).date():
                         todos_completed_on_time += 1
-                    if todo.date_completed.astimezone(user.profile.timezone).date() >= todo.due_date.astimezone(user.profile.timezone).date():
+                    if todo.date_completed.astimezone(user.profile.timezone).date() > todo.due_date.astimezone(user.profile.timezone).date():
                         todos_completed_after_due_date += 1
 
             user.profile.todos_completed_on_time = todos_completed_on_time
