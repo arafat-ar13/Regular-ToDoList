@@ -9,14 +9,11 @@
     }
 </style>
 
-{% if not request.user.profile.ver_2_informed %}
+    <!--<div class="alert alert-success" role="alert">-->
+    <!--    I have worked real hard for the past several weeks to make this app as robust as possible.-->
+    <!--    We are now announcing the 2nd version! You NEED to read about it here: <a href="{% url 'new-v2' %}">Click me</a>-->
+    <!--</div>-->
 
-    <div class="alert alert-success" role="alert">
-        I have worked real hard for the past several weeks to make this app as robust as possible.
-        We are now announcing the 2nd version! You NEED to read about it here: <a href="{% url 'new-v2' %}">Click me</a>
-    </div>
-
-{% endif %}
 
 <div style="text-align: center; font-family: Cambria">
     <h1 style="font-size:10ch">Happy {{ today_name }}</h1>
