@@ -134,7 +134,7 @@
                 Since the day you became a user of this app, you created:
                 <br>
                 <b id="total" class="important-num-major">
-                    <script>animateValue("total", 0, {{ user_total_todos }}, 5000)</script>
+                    {{ user_total_todos }}
                 </b>
                 todos
             </h1>
@@ -160,14 +160,14 @@
                     This week you created:
                     <br>
                     <b id="id-1" class="important-num-major">
-                        <script>animateValue("id-1", 0, {{ todos_created_this_week }}, 2000)</script>
+                        {{ todos_created_this_week }}
                     </b>
                     todos
                 </h1>
                 <h1>
                     And you completed:
                     <b id="id-2" class="important-num-minor">
-                        <script>animateValue("id-2", 0, {{ todos_completed_this_week }}, 2000)</script>
+                        {{ todos_completed_this_week }}
                     </b>
                     of them!!
                 </h1>
@@ -176,8 +176,8 @@
                     By analyzing you, the AI has said that you were about
                     <br>
                     <b id="efficiency" class="important-num-major">
-                        <script>animateValue("efficiency", 0, {{ efficiency_this_week }}, 4000)</script>
-                    </b>%
+                        {{ efficiency_this_week }}%
+                    </b>
                     <br>
                     efficient this week
                 </h3>
@@ -218,7 +218,7 @@
                     This week you completed
                     <br>
                     <b id='id-3' class="important-num-major">
-                        <script>animateValue("id-3", 0, {{ todos_on_time }}, 4000)</script>
+                        {{ todos_on_time }}
                     </b>
                     <br>
                     todos just on time! Yay!
@@ -234,7 +234,7 @@
                     This week you completed
                     <br>
                     <b id="id-4" class="important-num-major">
-                        <script>animateValue("id-4", 0, {{ completed_created_long_ago }}, 4000)</script>
+                        {{ completed_created_long_ago }}
                     </b>
                     <br>
                     todos that you created long before but couldn't find time to complete but this week you did! Awesome!!
@@ -250,7 +250,7 @@
                     This week you completed
                     <br>
                     <b style="color:orangered" id="id-5" class="important-num-major">
-                        <script>animateValue("id-5", 0, {{ todos_after_due_date }}, 4000)</script>
+                        {{ todos_after_due_date }}
                     </b>
                     <br>
                     todos after its due date!
@@ -266,7 +266,7 @@
                     This week you missed
                     <br>
                     <b style="color:red" id="id-6" class="important-num-major">
-                        <script>animateValue("id-6", 0, {{ missed_todos }}, 4000)</script>
+                        {{ missed_todos }}
                     </b>
                     <br>
                     todos. Oh no!!
@@ -282,7 +282,7 @@
                     This week you accomplished
                     <br>
                     <b style="color:yellow" id="id-7" class="important-num-major">
-                        <script>animateValue("id-7", 0, {{ important_todos_completed }}, 4000)</script>
+                        {{ important_todos_completed }}
                     </b>
                     <br>
                     tasks that were important to you! Hope hard work paid off!
